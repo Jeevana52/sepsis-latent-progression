@@ -14,7 +14,7 @@ patients = data[
     )
 ]
 
-patients = patients.drop_duplicates(subset=["subject_id"]).head(10)
+patients = patients.drop_duplicates(subset=["subject_id"]).head(60)
 
 for i, row in patients.iterrows():
 
