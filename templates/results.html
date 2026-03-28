@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Prediction Result — SepsisAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#080d14;--bg2:#0d1520;--bg3:#111d2c;--surface:#141f30;
+  --border:#1e2f45;--accent:#2563eb;--accent2:#3b82f6;
+  --red:#ef4444;--orange:#f97316;--green:#22c55e;
+  --text:#e2e8f0;--muted:#64748b;
+  --mono:'DM Mono',monospace;--sans:'Outfit',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(37,99,235,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+.header{position:relative;z-index:10;padding:20px 40px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)}
+.logo-mark{width:36px;height:36px;background:linear-gradient(135deg,#1d4ed8,#2563eb);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;font-weight:500;color:#fff;letter-spacing:-1px;box-shadow:0 0 20px rgba(37,99,235,.3)}
+.header-text h1{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.header-text p{font-size:12px;color:var(--muted);margin-top:1px}
+
+.page{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:40px 24px 80px}
+
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:28px;transition:color .15s}
+.back-link:hover{color:var(--text)}
+
+.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px;margin-top:24px}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:20px}
+
+.risk-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:16px}
+.risk-label{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px}
+.risk-number{font-family:var(--mono);font-size:56px;font-weight:500;line-height:1;letter-spacing:-2px}
+.risk-number.low{color:var(--green)}.risk-number.medium{color:var(--orange)}.risk-number.high{color:var(--red)}
+
+.stage-badge{padding:8px 18px;border-radius:6px;font-size:15px;font-weight:500}
+.stage-badge.normal{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.stage-badge.early{background:rgba(249,115,22,.12);color:var(--orange);border:1px solid rgba(249,115,22,.25)}
+.stage-badge.severe{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+
+.prob-bars{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.prob-row{display:flex;align-items:center;gap:12px}
+.prob-name{font-size:13px;width:140px;color:var(--muted)}
+.prob-bar-wrap{flex:1;height:10px;background:var(--bg3);border-radius:5px;overflow:hidden}
+.prob-bar{height:100%;border-radius:5px}
+.prob-val{font-family:var(--mono);font-size:12px;width:48px;text-align:right}
+.bar-green{background:var(--green)}.bar-orange{background:var(--orange)}.bar-red{background:var(--red)}
+
+.expl-box{background:var(--bg3);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 16px;font-size:14px;line-height:1.65;color:var(--text);margin-bottom:20px}
+
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.feat-cell{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px}
+.feat-cell.high{border-color:rgba(239,68,68,.4)}.feat-cell.low{border-color:rgba(249,115,22,.4)}.feat-cell.normal{border-color:rgba(34,197,94,.2)}
+.feat-cell-name{font-size:11px;color:var(--muted);margin-bottom:4px}
+.feat-cell-val{font-family:var(--mono);font-size:20px;font-weight:500}
+.feat-cell-range{font-size:10px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
+.feat-cell-flag{font-size:10px;margin-top:3px;font-weight:500}
+.feat-cell.high .feat-cell-flag{color:var(--red)}.feat-cell.low .feat-cell-flag{color:var(--orange)}.feat-cell.normal .feat-cell-flag{color:var(--green)}
+
+.shap-img{width:100%;border-radius:8px;margin-top:8px;border:1px solid var(--border)}
+
+.meta-row{display:flex;flex-wrap:wrap;gap:20px;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:20px}
+.meta-row span strong{color:var(--text);font-weight:500}
+
+.no-result{text-align:center;padding:80px 24px;color:var(--muted)}
+.no-result h3{font-size:18px;margin-bottom:8px;color:var(--text)}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo-mark">Sx</div>
+  <div class="header-text">
+    <h1>SepsisAI</h1>
+    <p>Prediction Result</p>
+  </div>
+</header>
+
+<main class="page">
+  <a href="/" class="back-link">← Back to prediction</a>
+
+  {% if result %}
+  {% set s = result %}
+  {% set si = s.stage_idx %}
+
+  <!-- Meta row -->
+  <div class="meta-row">
+    <span>Patient ID: <strong>{{ s.subject_id }}</strong></span>
+    <span>Stage: <strong>{{ s.stage }}</strong></span>
+    <span>Risk: <strong>{{ s.risk_pct }}%</strong></span>
+    {% if s.nan_filled > 0 %}
+    <span style="color:#f97316">{{ s.nan_filled }} missing value(s) filled with defaults</span>
+    {% endif %}
+  </div>
+
+  <!-- Risk + stage -->
+  <div class="card">
+    <div class="risk-top">
+      <div>
+        <div class="risk-label">Risk Score</div>
+        <div class="risk-number {{ 'low' if si==0 else 'medium' if si==1 else 'high' }}">
+          {{ s.risk_pct }}%
+        </div>
+      </div>
+      <span class="stage-badge {{ 'normal' if si==0 else 'early' if si==1 else 'severe' }}">
+        {{ s.stage }}
+      </span>
+    </div>
+
+    <!-- Probability bars -->
+    <div class="section-title">Class probabilities</div>
+    <div class="prob-bars">
+      <div class="prob-row">
+        <span class="prob-name">Normal</span>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar bar-green" style="width:{{ (s.prob_normal*100)|round|int }}%"></div>
+        </div>
+        <span class="prob-val">{{ (s.prob_normal*100)|round(1) }}%</span>
+      </div>
+      <div class="prob-row">
+        <span class="prob-name">Early Sepsis</span>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar bar-orange" style="width:{{ (s.prob_early*100)|round|int }}%"></div>
+        </div>
+        <span class="prob-val">{{ (s.prob_early*100)|round(1) }}%</span>
+      </div>
+      <div class="prob-row">
+        <span class="prob-name">Severe Sepsis</span>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar bar-red" style="width:{{ (s.prob_severe*100)|round|int }}%"></div>
+        </div>
+        <span class="prob-val">{{ (s.prob_severe*100)|round(1) }}%</span>
+      </div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="section-title">Clinical explanation</div>
+    <div class="expl-box">{{ s.explanation or 'No explanation available.' }}</div>
+
+    <!-- Vital status grid -->
+    <div class="section-title">Vital status</div>
+    <div class="feat-grid">
+      {% for f in s.feature_status %}
+      <div class="feat-cell {{ f.status if not f.missing else '' }}">
+        <div class="feat-cell-name">{{ f.display.split('(')[0].strip() }}</div>
+        <div class="feat-cell-val">{{ '—' if f.missing else f.value }}</div>
+        <div class="feat-cell-range">Normal: {{ f.range }}</div>
+        <div class="feat-cell-flag">
+          {% if f.missing %}— missing
+          {% elif f.status == 'normal' %}✓ normal
+          {% elif f.status == 'high' %}↑ high
+          {% else %}↓ low{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- SHAP plot -->
+  {% if s.shap_plot_url %}
+  <div class="card">
+    <div class="section-title">SHAP feature contributions</div>
+    <img class="shap-img" src="{{ s.shap_plot_url }}" alt="SHAP explanation"/>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px">
+      Red bars increase risk · Blue bars decrease risk · Bar length = magnitude of contribution
+    </p>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="no-result">
+    <h3>No result available</h3>
+    <p>Please run a prediction first.</p>
+    <a href="/" style="color:var(--accent2);font-size:14px;margin-top:16px;display:inline-block">← Go to prediction page</a>
+  </div>
+  {% endif %}
+
+</main>
+</body>
+</html>

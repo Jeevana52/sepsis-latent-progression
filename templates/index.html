@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SepsisAI — Early Detection System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:        #080d14;
+  --bg2:       #0d1520;
+  --bg3:       #111d2c;
+  --surface:   #141f30;
+  --border:    #1e2f45;
+  --border2:   #243650;
+  --accent:    #2563eb;
+  --accent2:   #3b82f6;
+  --red:       #ef4444;
+  --orange:    #f97316;
+  --green:     #22c55e;
+  --text:      #e2e8f0;
+  --muted:     #64748b;
+  --mono:      'DM Mono', monospace;
+  --sans:      'Outfit', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Grid bg ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Header ── */
+.header {
+  position: relative;
+  z-index: 10;
+  padding: 24px 40px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+
+.logo-mark {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono);
+  font-size: 14px; font-weight: 500;
+  color: #fff; letter-spacing: -1px;
+  box-shadow: 0 0 20px rgba(37,99,235,0.3);
+}
+
+.header-text h1 {
+  font-size: 16px; font-weight: 600; letter-spacing: -0.3px;
+}
+
+.header-text p {
+  font-size: 12px; color: var(--muted); margin-top: 1px;
+}
+
+.status-pill {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--green);
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+/* ── Layout ── */
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.hero-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--accent2);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  padding: 4px 12px;
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 20px;
+}
+
+.hero h2 {
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 300;
+  letter-spacing: -1.5px;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+
+.hero h2 strong {
+  font-weight: 600;
+  background: linear-gradient(90deg, #60a5fa, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero p {
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 300;
+  max-width: 560px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* ── Tab switcher ── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 28px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 0 16px rgba(37,99,235,0.35);
+}
+
+/* ── Card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.card-header-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.card-header h3 {
+  font-size: 14px; font-weight: 500;
+}
+
+.card-body { padding: 28px 24px; }
+
+/* ── Form panels ── */
+.form-panel { display: none; }
+.form-panel.active { display: block; }
+
+/* ── Manual entry grid ── */
+.vital-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+
+.field-group label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.field-group input[type="number"],
+.field-group input[type="text"] {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+
+.field-group .hint {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+/* ── File upload zone ── */
+.upload-zone {
+  border: 2px dashed var(--border2);
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(37,99,235,0.05);
+}
+
+.upload-icon {
+  width: 48px; height: 48px;
+  margin: 0 auto 16px;
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+
+.upload-zone h4 {
+  font-size: 15px; font-weight: 500; margin-bottom: 6px;
+}
+
+.upload-zone p {
+  font-size: 13px; color: var(--muted); margin-bottom: 16px;
+}
+
+.upload-zone input[type="file"] {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+
+.file-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(37,99,235,0.1);
+  border: 1px solid rgba(37,99,235,0.3);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-family: var(--mono);
+  font-size: 12px; color: var(--accent2);
+}
+
+.format-tags {
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.fmt-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+
+/* ── Patient ID ── */
+.pid-row {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.pid-row label {
+  font-size: 12px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.pid-row input {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  outline: none;
+  flex: 1;
+}
+
+/* ── Submit button ── */
+.submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  margin-top: 8px;
+  box-shadow: 0 4px 20px rgba(37,99,235,0.3);
+}
+
+.submit-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+.submit-btn:active { transform: translateY(0); }
+
+.submit-btn.loading { pointer-events: none; }
+.submit-btn.loading::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer { to { left: 100%; } }
+
+/* ── Info cards row ── */
+.info-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 40px;
+}
+
+@media (max-width: 600px) { .info-row { grid-template-columns: 1fr; } }
+
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.info-card-icon {
+  font-size: 20px; margin-bottom: 10px;
+}
+
+.info-card h4 { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+.info-card p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* ── Spinner overlay ── */
+#loading-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(8,13,20,0.85);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+
+#loading-overlay.show { display: flex; }
+
+.spinner {
+  width: 48px; height: 48px;
+  border: 3px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#loading-overlay p {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ── Result panel (injected after prediction) ── */
+#result-panel { display: none; margin-top: 32px; }
+#result-panel.show { display: block; }
+
+.risk-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+.risk-top {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap; gap: 16px;
+}
+
+.risk-score-block { display: flex; flex-direction: column; }
+
+.risk-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.risk-number {
+  font-family: var(--mono);
+  font-size: 52px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.risk-number.low    { color: var(--green); }
+.risk-number.medium { color: var(--orange); }
+.risk-number.high   { color: var(--red); }
+
+.stage-badge {
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.stage-badge.normal  { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+.stage-badge.early   { background: rgba(249,115,22,0.12); color: var(--orange); border: 1px solid rgba(249,115,22,0.25); }
+.stage-badge.severe  { background: rgba(239,68,68,0.12);  color: var(--red);    border: 1px solid rgba(239,68,68,0.25); }
+
+/* Probability bars */
+.prob-bars { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+
+.prob-row { display: flex; align-items: center; gap: 12px; }
+.prob-name { font-size: 13px; width: 130px; color: var(--muted); }
+.prob-bar-wrap { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.prob-bar { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+.prob-val  { font-family: var(--mono); font-size: 12px; width: 48px; text-align: right; }
+
+.bar-green  { background: var(--green); }
+.bar-orange { background: var(--orange); }
+.bar-red    { background: var(--red); }
+
+/* Explanation box */
+.expl-box {
+  background: var(--bg3);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+/* Feature grid in result */
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.feat-cell {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.feat-cell.high   { border-color: rgba(239,68,68,0.4); }
+.feat-cell.low    { border-color: rgba(249,115,22,0.4); }
+.feat-cell.normal { border-color: rgba(34,197,94,0.2); }
+
+.feat-cell-name  { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.feat-cell-val   { font-family: var(--mono); font-size: 18px; font-weight: 500; }
+.feat-cell-range { font-size: 10px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
+.feat-cell-flag  { font-size: 10px; margin-top: 3px; font-weight: 500; }
+.feat-cell.high .feat-cell-flag  { color: var(--red); }
+.feat-cell.low  .feat-cell-flag  { color: var(--orange); }
+.feat-cell.normal .feat-cell-flag{ color: var(--green); }
+
+/* SHAP plot */
+.shap-img {
+  width: 100%;
+  border-radius: 8px;
+  margin-top: 16px;
+  border: 1px solid var(--border);
+}
+</style>
+</head>
+
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo-mark">Sx</div>
+  <div class="header-text">
+    <h1>SepsisAI</h1>
+    <p>ICU Early Detection · MIMIC-IV · VAE + ClinicalBERT</p>
+  </div>
+  <span class="status-pill">● System Ready</span>
+</header>
+
+<!-- Loading overlay -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p>Running prediction pipeline…</p>
+</div>
+
+<!-- Page -->
+<main class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <span class="hero-tag">Explainable AI · Clinical Decision Support</span>
+    <h2>Detect sepsis risk<br/><strong>before it escalates</strong></h2>
+    <p>Upload a patient's medical document or enter ICU vitals manually. Our VAE-based model analyzes physiological patterns and provides an interpretable risk assessment with SHAP explanations.</p>
+  </div>
+
+  <!-- Tab switcher -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('manual', this)">
+      ✏️ &nbsp;Manual Entry
+    </button>
+    <button class="tab-btn" onclick="switchTab('file', this)">
+      📄 &nbsp;Upload Document
+    </button>
+  </div>
+
+  <!-- Main card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-dot"></div>
+      <h3 id="card-title">Enter patient vitals</h3>
+    </div>
+    <div class="card-body">
+
+      <!-- Patient ID row -->
+      <div class="pid-row">
+        <label>Patient ID</label>
+        <input type="text" id="subject-id" placeholder="e.g. 10119770" maxlength="12"/>
+      </div>
+
+      <!-- MANUAL ENTRY PANEL -->
+      <div id="panel-manual" class="form-panel active">
+        <div class="vital-grid" id="vital-grid"></div>
+      </div>
+
+      <!-- FILE UPLOAD PANEL -->
+      <div id="panel-file" class="form-panel">
+        <div class="upload-zone" id="drop-zone">
+          <input type="file" id="file-input" accept=".pdf,.csv,.txt"
+                 onchange="handleFileSelect(this)"/>
+          <div class="upload-icon">📋</div>
+          <h4>Drop patient document here</h4>
+          <p>Discharge notes, ICU CSV, or clinical text</p>
+          <div class="format-tags">
+            <span class="fmt-tag">PDF</span>
+            <span class="fmt-tag">CSV</span>
+            <span class="fmt-tag">TXT</span>
+          </div>
+          <div id="file-badge" style="margin-top:12px;display:none">
+            <span class="file-pill">
+              <span>📄</span>
+              <span id="file-name">—</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button class="submit-btn" id="submit-btn" onclick="runPrediction()">
+        Analyze Patient Risk →
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ── RESULT PANEL (shown after prediction) ── -->
+  <div id="result-panel">
+
+    <!-- Risk card -->
+    <div class="risk-card">
+      <div class="risk-top">
+        <div class="risk-score-block">
+          <span class="risk-label">Risk Score</span>
+          <span class="risk-number" id="r-score">—</span>
+        </div>
+        <span class="stage-badge" id="r-stage">—</span>
+      </div>
+
+      <!-- Probability bars -->
+      <div class="prob-bars">
+        <div class="prob-row">
+          <span class="prob-name">Normal</span>
+          <div class="prob-bar-wrap"><div class="prob-bar bar-green" id="bar-normal" style="width:0%"></div></div>
+          <span class="prob-val" id="pv-normal">0%</span>
+        </div>
+        <div class="prob-row">
+          <span class="prob-name">Early Sepsis</span>
+          <div class="prob-bar-wrap"><div class="prob-bar bar-orange" id="bar-early" style="width:0%"></div></div>
+          <span class="prob-val" id="pv-early">0%</span>
+        </div>
+        <div class="prob-row">
+          <span class="prob-name">Severe Sepsis</span>
+          <div class="prob-bar-wrap"><div class="prob-bar bar-red" id="bar-severe" style="width:0%"></div></div>
+          <span class="prob-val" id="pv-severe">0%</span>
+        </div>
+      </div>
+
+      <!-- Explanation -->
+      <div class="expl-box" id="r-expl">—</div>
+
+      <!-- Feature status -->
+      <div>
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Vital Status</div>
+        <div class="feat-grid" id="r-feat-grid"></div>
+      </div>
+
+      <!-- SHAP plot -->
+      <div id="shap-section" style="display:none">
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:20px 0 10px;">SHAP Feature Contributions</div>
+        <img class="shap-img" id="shap-img" src="" alt="SHAP explanation"/>
+      </div>
+    </div>
+
+  </div><!-- end result panel -->
+
+  <!-- Info cards -->
+  <div class="info-row">
+    <div class="info-card">
+      <div class="info-card-icon">🧬</div>
+      <h4>VAE Latent Modeling</h4>
+      <p>A Variational Autoencoder learns hidden disease progression states from combined structured vitals and clinical text.</p>
+    </div>
+    <div class="info-card">
+      <div class="info-card-icon">📝</div>
+      <h4>ClinicalBERT Text Encoder</h4>
+      <p>Medical notes are encoded using ClinicalBERT, capturing clinical language nuances invisible to structured data alone.</p>
+    </div>
+    <div class="info-card">
+      <div class="info-card-icon">🔍</div>
+      <h4>SHAP Explainability</h4>
+      <p>Every prediction comes with SHAP-based feature attributions showing exactly which vital signs drove the risk score.</p>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Vital field definitions ─────────────────────────────────────────────────
+const FIELDS = [
+  { col:"heart_rate",  label:"Heart Rate",       unit:"bpm",      placeholder:"60–100", step:"1"   },
+  { col:"mean_bp",     label:"Mean BP (MAP)",     unit:"mmHg",     placeholder:"70–100", step:"1"   },
+  { col:"resp_rate",   label:"Respiratory Rate",  unit:"br/min",   placeholder:"12–20",  step:"1"   },
+  { col:"systolic_bp", label:"Systolic BP",       unit:"mmHg",     placeholder:"90–140", step:"1"   },
+  { col:"temperature", label:"Temperature",       unit:"°C",       placeholder:"36–38",  step:"0.1" },
+  { col:"lactate",     label:"Lactate",           unit:"mmol/L",   placeholder:"0.5–2",  step:"0.1" },
+  { col:"wbc",         label:"WBC Count",         unit:"×10³/μL",  placeholder:"4–11",   step:"0.1" },
+];
+
+// Build vital grid
+const grid = document.getElementById('vital-grid');
+FIELDS.forEach(f => {
+  grid.innerHTML += `
+  <div class="field-group">
+    <label>${f.label} <span style="color:#3b82f6;font-weight:400;font-family:var(--mono);font-size:11px">${f.unit}</span></label>
+    <input type="number" id="field-${f.col}" placeholder="${f.placeholder}"
+           step="${f.step}" min="0"/>
+    <span class="hint">Normal: ${f.placeholder}</span>
+  </div>`;
+});
+
+// ── Tab switching ───────────────────────────────────────────────────────────
+let currentMode = 'manual';
+
+function switchTab(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + mode).classList.add('active');
+  document.getElementById('card-title').textContent =
+    mode === 'manual' ? 'Enter patient vitals' : 'Upload patient document';
+}
+
+// ── File select ─────────────────────────────────────────────────────────────
+let selectedFile = null;
+
+function handleFileSelect(input) {
+  if (input.files && input.files[0]) {
+    selectedFile = input.files[0];
+    document.getElementById('file-name').textContent = selectedFile.name;
+    document.getElementById('file-badge').style.display = 'block';
+  }
+}
+
+// Drag and drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) {
+    selectedFile = f;
+    document.getElementById('file-name').textContent = f.name;
+    document.getElementById('file-badge').style.display = 'block';
+  }
+});
+
+// ── Run prediction ──────────────────────────────────────────────────────────
+function runPrediction() {
+  const btn = document.getElementById('submit-btn');
+  const overlay = document.getElementById('loading-overlay');
+  btn.classList.add('loading');
+  btn.textContent = 'Analyzing…';
+  overlay.classList.add('show');
+
+  const fd = new FormData();
+  fd.append('subject_id', document.getElementById('subject-id').value || '0');
+
+  if (currentMode === 'manual') {
+    fd.append('input_mode', 'manual');
+    FIELDS.forEach(f => {
+      const val = document.getElementById('field-' + f.col).value;
+      if (val) fd.append(f.col, val);
+    });
+  } else {
+    fd.append('input_mode', 'file');
+    if (selectedFile) fd.append('patient_file', selectedFile);
+  }
+
+  fetch('/predict', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      overlay.classList.remove('show');
+      btn.classList.remove('loading');
+      btn.textContent = 'Analyze Patient Risk →';
+      if (data.error) {
+        alert('Error: ' + data.error);
+        return;
+      }
+      renderResult(data);
+    })
+    .catch(err => {
+      overlay.classList.remove('show');
+      btn.classList.remove('loading');
+      btn.textContent = 'Analyze Patient Risk →';
+      alert('Network error: ' + err.message);
+    });
+}
+
+// ── Render result ───────────────────────────────────────────────────────────
+function renderResult(d) {
+  // Risk score
+  const scoreEl = document.getElementById('r-score');
+  scoreEl.textContent = (d.risk_pct).toFixed(1) + '%';
+  scoreEl.className = 'risk-number ' +
+    (d.stage_idx === 0 ? 'low' : d.stage_idx === 1 ? 'medium' : 'high');
+
+  // Stage badge
+  const stageEl = document.getElementById('r-stage');
+  stageEl.textContent = d.stage;
+  stageEl.className = 'stage-badge ' +
+    (d.stage_idx === 0 ? 'normal' : d.stage_idx === 1 ? 'early' : 'severe');
+
+  // Probability bars
+  const pn = Math.round(d.prob_normal * 100);
+  const pe = Math.round(d.prob_early  * 100);
+  const ps = Math.round(d.prob_severe * 100);
+  setTimeout(() => {
+    document.getElementById('bar-normal').style.width  = pn + '%';
+    document.getElementById('bar-early').style.width   = pe + '%';
+    document.getElementById('bar-severe').style.width  = ps + '%';
+  }, 50);
+  document.getElementById('pv-normal').textContent = pn + '%';
+  document.getElementById('pv-early').textContent  = pe + '%';
+  document.getElementById('pv-severe').textContent = ps + '%';
+
+  // Explanation
+  document.getElementById('r-expl').textContent = d.explanation || 'No explanation available.';
+
+  // Feature grid
+  const fg = document.getElementById('r-feat-grid');
+  fg.innerHTML = '';
+  (d.feature_status || []).forEach(f => {
+    const flagText = f.missing ? '— missing' : f.status === 'normal' ? '✓ normal' :
+                     f.status === 'high' ? '↑ high' : '↓ low';
+    fg.innerHTML += `
+    <div class="feat-cell ${f.missing ? '' : f.status}">
+      <div class="feat-cell-name">${f.display.split('(')[0].trim()}</div>
+      <div class="feat-cell-val">${f.missing ? '—' : f.value}</div>
+      <div class="feat-cell-range">Normal: ${f.range}</div>
+      <div class="feat-cell-flag">${flagText}</div>
+    </div>`;
+  });
+
+  // SHAP plot
+  if (d.shap_plot_url) {
+    document.getElementById('shap-img').src = d.shap_plot_url + '?t=' + Date.now();
+    document.getElementById('shap-section').style.display = 'block';
+  }
+
+  // Show result panel and scroll
+  const rp = document.getElementById('result-panel');
+  rp.classList.add('show');
+  rp.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+
+</body>
+</html>
