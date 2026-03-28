@@ -12,7 +12,7 @@ data/raw/
 data/processed/
 
 # Outputs
-outputs/
+#outputs/
 *.pt
 *.pth
 *.ckpt
