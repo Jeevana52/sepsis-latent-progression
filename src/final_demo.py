@@ -14,7 +14,8 @@ patients = data[
     )
 ]
 
-patients = patients.drop_duplicates(subset=["subject_id"]).head(10)
+# 10,000 unique patients
+patients = patients.drop_duplicates(subset=["subject_id"]).head(10000)
 
 for i, row in patients.iterrows():
 
@@ -51,6 +52,7 @@ for i, row in patients.iterrows():
         stage = "Severe Sepsis"
 
     print("\n======================")
+    print(f"Patient Number: {i}")
     print(f"Subject ID: {row['subject_id']}")
     print(f"Heart Rate: {row['heart_rate']}")
     print(f"Mean BP: {row['mean_bp']}")
