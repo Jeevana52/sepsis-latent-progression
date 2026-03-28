@@ -14,8 +14,7 @@ patients = data[
     )
 ]
 
-# 10,000 unique patients
-patients = patients.drop_duplicates(subset=["subject_id"]).head(10000)
+patients = patients.drop_duplicates(subset=["subject_id"]).head(60)
 
 for i, row in patients.iterrows():
 
