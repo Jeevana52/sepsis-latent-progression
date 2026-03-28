@@ -151,52 +151,78 @@ class SepsisClassifier(nn.Module):
 
 def generate_labels_from_features(df) -> np.ndarray:
     """
-    Generate pseudo-labels for training using Sepsis-3 inspired thresholds.
-    Used when you don't have ground truth sepsis labels.
+    Generate pseudo-labels for training using a composite severity score
+    with percentile-based splitting.
 
-    Criteria
+    Strategy
     --------
-    Severe Sepsis  : lactate > 2.0  AND (mean_bp < 65  OR heart_rate > 120)
-    Early Sepsis   : (lactate > 1.5 OR heart_rate > 100 OR resp_rate > 20)
-                     AND NOT severe
-    Normal         : everything else
+    ICU data is inherently sick — fixed thresholds like "HR > 100" will
+    label nearly every row as Early Sepsis and produce only 1 class.
+
+    Instead we:
+      1. Build a continuous severity score per row (0–6 points).
+      2. Split into 3 classes by percentile:
+            Bottom 40% by score  → Normal
+            Middle 40%           → Early Sepsis
+            Top    20%           → Severe Sepsis
+      This guarantees all 3 classes are always present regardless of
+      how sick the underlying cohort is.
+
+    Score components (each contributes 0 or 1 point):
+        lactate   > data 75th pct    → +2  (most discriminative)
+        mean_bp   < data 25th pct    → +2
+        heart_rate > data 75th pct   → +1
+        resp_rate  > data 75th pct   → +1
 
     Parameters
     ----------
-    df : pd.DataFrame with columns heart_rate, mean_bp, resp_rate, lactate, wbc
+    df : pd.DataFrame with columns matching FEATURE_COLS
 
     Returns
     -------
-    labels : np.ndarray of ints (0=Normal, 1=Early, 2=Severe)
+    labels : np.ndarray of ints (0=Normal, 1=Early Sepsis, 2=Severe Sepsis)
     """
-    import pandas as pd
+    # Fill NaN with column medians (safe neutral values)
+    hr  = df["heart_rate"].fillna(df["heart_rate"].median())
+    mbp = df["mean_bp"].fillna(df["mean_bp"].median())
+    rr  = df["resp_rate"].fillna(df["resp_rate"].median())
+    lac = df["lactate"].fillna(df["lactate"].median())
 
-    labels = np.zeros(len(df), dtype=int)
+    # Compute percentile thresholds from the actual data distribution
+    lac_75  = float(np.nanpercentile(lac, 75))
+    mbp_25  = float(np.nanpercentile(mbp, 25))
+    hr_75   = float(np.nanpercentile(hr,  75))
+    rr_75   = float(np.nanpercentile(rr,  75))
 
-    # Fill NaN with neutral values so thresholds don't trigger on missing data
-    hr  = df["heart_rate"].fillna(80)
-    mbp = df["mean_bp"].fillna(80)
-    rr  = df["resp_rate"].fillna(16)
-    lac = df["lactate"].fillna(1.0)
-    wbc = df["wbc"].fillna(8.0)
-    tmp = df["temperature"].fillna(37.0)
+    print(f"[Labels] Thresholds — lactate p75: {lac_75:.2f} | "
+          f"map p25: {mbp_25:.1f} | hr p75: {hr_75:.1f} | rr p75: {rr_75:.1f}")
 
-    # Severe Sepsis (class 2)
-    severe_mask = (
-        (lac > 2.0) & ((mbp < 65) | (hr > 120))
+    # Build severity score
+    score = (
+        (lac > lac_75).astype(int) * 2 +
+        (mbp < mbp_25).astype(int) * 2 +
+        (hr  > hr_75).astype(int)  * 1 +
+        (rr  > rr_75).astype(int)  * 1
     )
 
-    # Early Sepsis (class 1)
-    early_mask = (
-        (lac > 1.5) | (hr > 100) | (rr > 20) |
-        (tmp > 38.3) | (tmp < 36.0) | (wbc > 12) | (wbc < 4)
-    ) & ~severe_mask
+    # Percentile-based split: always produces all 3 classes
+    p40 = np.percentile(score, 40)
+    p80 = np.percentile(score, 80)
 
-    labels[early_mask]  = 1
-    labels[severe_mask] = 2
+    labels = np.zeros(len(df), dtype=int)
+    labels[score >  p40] = 1   # Early Sepsis
+    labels[score >  p80] = 2   # Severe Sepsis
 
     counts = np.bincount(labels, minlength=3)
-    print(f"[Labels] Normal: {counts[0]}  |  Early Sepsis: {counts[1]}  |  Severe Sepsis: {counts[2]}")
+    print(f"[Labels] Normal: {counts[0]}  |  "
+          f"Early Sepsis: {counts[1]}  |  "
+          f"Severe Sepsis: {counts[2]}")
+
+    # Sanity check — warn if any class is empty
+    if 0 in counts:
+        print("[Labels] WARNING: A class has 0 samples. "
+              "Check your feature columns for all-NaN columns.")
+
     return labels
 
 

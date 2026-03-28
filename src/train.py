@@ -381,6 +381,7 @@ def train(config=None):
 
     report = classification_report(
         all_labels, all_preds,
+        labels=[0, 1, 2],
         target_names=list(STAGE_LABELS.values()),
         zero_division=0
     )
