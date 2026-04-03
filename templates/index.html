@@ -571,10 +571,10 @@ body::before {
   <!-- Tab switcher -->
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('manual', this)">
-      ✏️ &nbsp;Manual Entry
+       &nbsp;Manual Entry
     </button>
     <button class="tab-btn" onclick="switchTab('file', this)">
-      📄 &nbsp;Upload Document
+       &nbsp;Upload Document
     </button>
   </div>
 
@@ -602,7 +602,7 @@ body::before {
         <div class="upload-zone" id="drop-zone">
           <input type="file" id="file-input" accept=".pdf,.csv,.txt"
                  onchange="handleFileSelect(this)"/>
-          <div class="upload-icon">📋</div>
+          <div class="upload-icon"></div>
           <h4>Drop patient document here</h4>
           <p>Discharge notes, ICU CSV, or clinical text</p>
           <div class="format-tags">
@@ -612,7 +612,7 @@ body::before {
           </div>
           <div id="file-badge" style="margin-top:12px;display:none">
             <span class="file-pill">
-              <span>📄</span>
+              <span></span>
               <span id="file-name">—</span>
             </span>
           </div>
@@ -680,17 +680,17 @@ body::before {
   <!-- Info cards -->
   <div class="info-row">
     <div class="info-card">
-      <div class="info-card-icon">🧬</div>
+      <div class="info-card-icon"></div>
       <h4>VAE Latent Modeling</h4>
       <p>A Variational Autoencoder learns hidden disease progression states from combined structured vitals and clinical text.</p>
     </div>
     <div class="info-card">
-      <div class="info-card-icon">📝</div>
+      <div class="info-card-icon"></div>
       <h4>ClinicalBERT Text Encoder</h4>
       <p>Medical notes are encoded using ClinicalBERT, capturing clinical language nuances invisible to structured data alone.</p>
     </div>
     <div class="info-card">
-      <div class="info-card-icon">🔍</div>
+      <div class="info-card-icon"></div>
       <h4>SHAP Explainability</h4>
       <p>Every prediction comes with SHAP-based feature attributions showing exactly which vital signs drove the risk score.</p>
     </div>
