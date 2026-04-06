@@ -198,10 +198,3 @@ Files used:
 | Web Framework  | Flask |
 | Evaluation     | scikit-learn |
 | Visualization  | matplotlib |
-
----
-
-## Author
-
-**Jeevana** — Final Year Project  
-GitHub: [@Jeevana52](https://github.com/Jeevana52)
