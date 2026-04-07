@@ -323,18 +323,49 @@ def clinical_risk_score(fc: np.ndarray):
     return risk_score, stage_idx, prob_normal, prob_early, prob_severe
 
 # ── Main prediction ───────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# DROP-IN REPLACEMENT for run_prediction() in app.py
+#
+# WHAT WAS WRONG:
+#   The trained model always predicted "Normal" with >60% confidence because it
+#   was trained on percentile-based pseudo-labels (bottom 40% of sick ICU rows
+#   labelled Normal), causing it to learn a biased distribution.
+#   Result: model override silenced the clinical scorer for every patient.
+#
+# FIX:
+#   1. Clinical scorer (Sepsis-3 based) is now ALWAYS computed first.
+#   2. The trained model is only used as a secondary signal — it can ONLY
+#      increase severity, never reduce a clinical score that already shows sepsis.
+#   3. Model confidence threshold raised to 0.90.
+#   4. Hard-override: if lactate > 2 OR MAP < 65, clinical score takes precedence
+#      regardless of what the model says.
+# ─────────────────────────────────────────────────────────────────────────────
+
 def run_prediction(features: np.ndarray, subject_id: int = 0) -> dict:
     nan_mask = np.isnan(features)
     fc = features.copy()
     fc[nan_mask] = DEFAULTS[nan_mask]
 
-    used_model = False
+    # ── Step 1: Always compute the clinical score first ───────────────────────
+    clin_risk, clin_stage_idx, clin_p_normal, clin_p_early, clin_p_severe = \
+        clinical_risk_score(fc)
 
-    # Fix 2: Try trained model first, use clinical scorer as fallback
-    # The model is used when max class probability > 0.60 (confident prediction).
-    # Below that threshold, the Sepsis-3 clinical scorer takes over.
-    # This hybrid approach combines learned representations with clinical validity.
-    if MODEL is not None and X_MEAN is not None:
+    risk_score  = clin_risk
+    stage_idx   = clin_stage_idx
+    prob_normal = clin_p_normal
+    prob_early  = clin_p_early
+    prob_severe = clin_p_severe
+    used_model  = False
+
+    # ── Step 2: Sepsis-3 hard-override criteria ───────────────────────────────
+    # If lactate > 2 mmol/L OR MAP < 65 mmHg, these are Sepsis-3 diagnostic
+    # criteria — the clinical scorer's result is definitive.
+    lactate = fc[5]
+    mean_bp = fc[1]
+    sepsis3_criteria_met = (lactate > 2.0) or (mean_bp < 65.0)
+
+    # ── Step 3: Optionally blend trained model (only if it agrees) ───────────
+    if MODEL is not None and X_MEAN is not None and not sepsis3_criteria_met:
         try:
             fn = (fc - X_MEAN) / (X_STD + 1e-8)
             xt = torch.FloatTensor(fn).unsqueeze(0).unsqueeze(0)
@@ -342,41 +373,50 @@ def run_prediction(features: np.ndarray, subject_id: int = 0) -> dict:
             with torch.no_grad():
                 logits, *_ = MODEL(xt)
                 probs = torch.softmax(logits, dim=-1)[0].numpy()
-            max_conf = float(probs.max())
-            if max_conf >= 0.60:
-                # Model is confident — use its prediction
-                stage_idx   = int(probs.argmax())
+
+            max_conf     = float(probs.max())
+            model_stage  = int(probs.argmax())
+
+            # Only trust the model if:
+            #   (a) Very high confidence (>= 0.90)
+            #   (b) Model predicts EQUAL or HIGHER severity than clinical scorer
+            #       (never let model downgrade a clinical sepsis signal)
+            if max_conf >= 0.90 and model_stage >= clin_stage_idx:
                 prob_normal = float(probs[0])
                 prob_early  = float(probs[1])
                 prob_severe = float(probs[2])
-                risk_score  = float(probs[1]*0.5 + probs[2]*1.0)
+                stage_idx   = model_stage
+                risk_score  = float(probs[1] * 0.5 + probs[2] * 1.0)
                 used_model  = True
                 print(f"[Predict] Model used (conf={max_conf:.2f}): stage={stage_idx}")
             else:
-                print(f"[Predict] Model low confidence ({max_conf:.2f}) — using clinical scorer")
+                print(f"[Predict] Model skipped "
+                      f"(conf={max_conf:.2f}, model_stage={model_stage}, "
+                      f"clin_stage={clin_stage_idx}) — using clinical scorer")
         except Exception as e:
             print(f"[Predict] Model error: {e}")
-
-    if not used_model:
-        risk_score, stage_idx, prob_normal, prob_early, prob_severe = clinical_risk_score(fc)
+    elif sepsis3_criteria_met:
+        print(f"[Predict] Sepsis-3 criteria met (Lac={lactate:.1f}, MAP={mean_bp:.0f})"
+              f" — clinical scorer is definitive")
 
     stage_names = ["Normal", "Early Sepsis", "Severe Sepsis"]
     stage       = stage_names[stage_idx]
 
     print(f"[Predict] Score={risk_score:.2f} Stage={stage} "
           f"HR={fc[0]:.0f} MAP={fc[1]:.0f} RR={fc[2]:.0f} "
-          f"SBP={fc[3]:.0f} T={fc[4]:.1f} Lac={fc[5]:.1f} WBC={fc[6]:.1f}")
+          f"SBP={fc[3]:.0f} T={fc[4]:.1f} Lac={fc[5]:.1f} WBC={fc[6]:.1f} "
+          f"model_used={used_model}")
 
-    # Explanation
+    # ── Explanation ───────────────────────────────────────────────────────────
     expl = {"explanation_text": "", "top_features": [], "plot_path": None}
     if EXPLAINER:
         try:
             expl = EXPLAINER.explain(fc, subject_id=subject_id,
-                                     risk_score=round(risk_score,3), stage=stage)
+                                     risk_score=round(risk_score, 3), stage=stage)
         except Exception as e:
             print(f"[Predict] Explainer error: {e}")
 
-    # Feature status
+    # ── Feature status grid ───────────────────────────────────────────────────
     feat_status = []
     for i, col in enumerate(FEATURE_COLS):
         rv  = features[i]
@@ -387,9 +427,12 @@ def run_prediction(features: np.ndarray, subject_id: int = 0) -> dict:
         elif val > hi:     status = "high"
         else:              status = "normal"
         feat_status.append({
-            "name": col, "display": FEATURE_DISPLAY[col],
-            "value": round(float(val), 2), "missing": bool(np.isnan(rv)),
-            "status": status, "range": f"{lo}–{hi}",
+            "name":    col,
+            "display": FEATURE_DISPLAY[col],
+            "value":   round(float(val), 2),
+            "missing": bool(np.isnan(rv)),
+            "status":  status,
+            "range":   f"{lo}–{hi}",
         })
 
     plot_url = None
@@ -413,7 +456,6 @@ def run_prediction(features: np.ndarray, subject_id: int = 0) -> dict:
         "nan_filled":     int(nan_mask.sum()),
         "used_model":     used_model,
     }
-
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
