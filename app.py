@@ -44,14 +44,56 @@ NORMAL_RANGES = {
 
 DEFAULTS = np.array([80.0, 80.0, 16.0, 120.0, 37.0, 1.2, 8.0], dtype=np.float32)
 
-EXPLAINER = None
+EXPLAINER  = None
+MODEL      = None
+X_MEAN     = None
+X_STD      = None
+
 
 def load_model():
-    global EXPLAINER
+    global EXPLAINER, MODEL, X_MEAN, X_STD
+
+    # Load trained model
+    try:
+        from src.train import SepsisEndToEnd, CONFIG
+        mp = os.path.join(BASE_DIR, "models", "best_model.pt")
+        if os.path.exists(mp):
+            m = SepsisEndToEnd(
+                struct_dim=7,
+                lstm_out=CONFIG["lstm_latent_dim"],
+                fused_dim=CONFIG["fused_dim"],
+                latent_dim=CONFIG["latent_dim"],
+            )
+            m.load_state_dict(torch.load(mp, map_location="cpu"))
+            m.eval()
+            MODEL = m
+            print("[App] Trained model loaded.")
+        mean_p = os.path.join(BASE_DIR, "models", "feature_mean.npy")
+        if os.path.exists(mean_p):
+            X_MEAN = np.load(mean_p)
+            X_STD  = np.load(os.path.join(BASE_DIR, "models", "feature_std.npy"))
+            print("[App] Normalization stats loaded.")
+    except Exception as e:
+        print(f"[App] Model load warning: {e}")
+
+    # Load explainer + auto-fit SHAP background
     try:
         from src.explainability import SepsisExplainer
         EXPLAINER = SepsisExplainer(model=None, output_dir=app.config["OUTPUT_FOLDER"])
-        print("[App] Explainer ready.")
+        data_path = os.path.join(BASE_DIR, "data", "processed", "final_structured.csv")
+        if os.path.exists(data_path) and MODEL is not None and X_MEAN is not None:
+            try:
+                import pandas as pd
+                FC = ["heart_rate","mean_bp","resp_rate","systolic_bp","temperature","lactate","wbc"]
+                df_bg = pd.read_csv(data_path, nrows=500)[FC].fillna(0)
+                X_bg  = df_bg.values.astype(np.float32)
+                X_bg_norm = (X_bg - X_MEAN) / (X_STD + 1e-8)
+                EXPLAINER.fit_background(X_bg_norm)
+                print("[App] SHAP background fitted — SHAP plots enabled.")
+            except Exception as e2:
+                print(f"[App] SHAP background skipped: {e2}")
+        else:
+            print("[App] Explainer ready (rule-based explanations).")
     except Exception as e:
         print(f"[App] Explainer warning: {e}")
 
@@ -286,10 +328,37 @@ def run_prediction(features: np.ndarray, subject_id: int = 0) -> dict:
     fc = features.copy()
     fc[nan_mask] = DEFAULTS[nan_mask]
 
-    # Always use calibrated clinical rule-based scorer
-    # (trained model uses percentile-based labels from specific MIMIC cohort
-    #  and does not generalize to new patients — rule-based is more reliable)
-    risk_score, stage_idx, prob_normal, prob_early, prob_severe = clinical_risk_score(fc)
+    used_model = False
+
+    # Fix 2: Try trained model first, use clinical scorer as fallback
+    # The model is used when max class probability > 0.60 (confident prediction).
+    # Below that threshold, the Sepsis-3 clinical scorer takes over.
+    # This hybrid approach combines learned representations with clinical validity.
+    if MODEL is not None and X_MEAN is not None:
+        try:
+            fn = (fc - X_MEAN) / (X_STD + 1e-8)
+            xt = torch.FloatTensor(fn).unsqueeze(0).unsqueeze(0)
+            MODEL.eval()
+            with torch.no_grad():
+                logits, *_ = MODEL(xt)
+                probs = torch.softmax(logits, dim=-1)[0].numpy()
+            max_conf = float(probs.max())
+            if max_conf >= 0.60:
+                # Model is confident — use its prediction
+                stage_idx   = int(probs.argmax())
+                prob_normal = float(probs[0])
+                prob_early  = float(probs[1])
+                prob_severe = float(probs[2])
+                risk_score  = float(probs[1]*0.5 + probs[2]*1.0)
+                used_model  = True
+                print(f"[Predict] Model used (conf={max_conf:.2f}): stage={stage_idx}")
+            else:
+                print(f"[Predict] Model low confidence ({max_conf:.2f}) — using clinical scorer")
+        except Exception as e:
+            print(f"[Predict] Model error: {e}")
+
+    if not used_model:
+        risk_score, stage_idx, prob_normal, prob_early, prob_severe = clinical_risk_score(fc)
 
     stage_names = ["Normal", "Early Sepsis", "Severe Sepsis"]
     stage       = stage_names[stage_idx]
@@ -342,7 +411,7 @@ def run_prediction(features: np.ndarray, subject_id: int = 0) -> dict:
         "feature_status": feat_status,
         "shap_plot_url":  plot_url,
         "nan_filled":     int(nan_mask.sum()),
-        "used_model":     False,
+        "used_model":     used_model,
     }
 
 # ── Routes ────────────────────────────────────────────────────────────────────
