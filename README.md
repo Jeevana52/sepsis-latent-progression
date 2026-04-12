@@ -1,4 +1,4 @@
-# SepsisAI — Early Sepsis Detection Using VAE + ClinicalBERT
+# SepsisProg — Early Sepsis Detection Using VAE + ClinicalBERT
 
 > **Learning Latent Sepsis Progression Patterns Using Variational Autoencoders and ClinicalBERT: An Explainable Generative Approach**
 
