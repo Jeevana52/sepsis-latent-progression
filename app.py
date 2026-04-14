@@ -358,13 +358,11 @@ def run_prediction(features: np.ndarray, subject_id: int = 0) -> dict:
     used_model  = False
 
     # ── Step 2: Sepsis-3 hard-override criteria ───────────────────────────────
-    # If lactate > 2 mmol/L OR MAP < 65 mmHg, these are Sepsis-3 diagnostic
-    # criteria — the clinical scorer's result is definitive.
     lactate = fc[5]
     mean_bp = fc[1]
     sepsis3_criteria_met = (lactate > 2.0) or (mean_bp < 65.0)
 
-    # ── Step 3: Optionally blend trained model (only if it agrees) ───────────
+    # ── Step 3: Optionally blend trained model ────────────────────────────────
     if MODEL is not None and X_MEAN is not None and not sepsis3_criteria_met:
         try:
             fn = (fc - X_MEAN) / (X_STD + 1e-8)
@@ -373,14 +371,8 @@ def run_prediction(features: np.ndarray, subject_id: int = 0) -> dict:
             with torch.no_grad():
                 logits, *_ = MODEL(xt)
                 probs = torch.softmax(logits, dim=-1)[0].numpy()
-
-            max_conf     = float(probs.max())
-            model_stage  = int(probs.argmax())
-
-            # Only trust the model if:
-            #   (a) Very high confidence (>= 0.90)
-            #   (b) Model predicts EQUAL or HIGHER severity than clinical scorer
-            #       (never let model downgrade a clinical sepsis signal)
+            max_conf    = float(probs.max())
+            model_stage = int(probs.argmax())
             if max_conf >= 0.90 and model_stage >= clin_stage_idx:
                 prob_normal = float(probs[0])
                 prob_early  = float(probs[1])
@@ -390,14 +382,11 @@ def run_prediction(features: np.ndarray, subject_id: int = 0) -> dict:
                 used_model  = True
                 print(f"[Predict] Model used (conf={max_conf:.2f}): stage={stage_idx}")
             else:
-                print(f"[Predict] Model skipped "
-                      f"(conf={max_conf:.2f}, model_stage={model_stage}, "
-                      f"clin_stage={clin_stage_idx}) — using clinical scorer")
+                print(f"[Predict] Model skipped (conf={max_conf:.2f}) — using clinical scorer")
         except Exception as e:
             print(f"[Predict] Model error: {e}")
     elif sepsis3_criteria_met:
-        print(f"[Predict] Sepsis-3 criteria met (Lac={lactate:.1f}, MAP={mean_bp:.0f})"
-              f" — clinical scorer is definitive")
+        print(f"[Predict] Sepsis-3 criteria met (Lac={lactate:.1f}, MAP={mean_bp:.0f}) — clinical scorer definitive")
 
     stage_names = ["Normal", "Early Sepsis", "Severe Sepsis"]
     stage       = stage_names[stage_idx]
@@ -409,12 +398,41 @@ def run_prediction(features: np.ndarray, subject_id: int = 0) -> dict:
 
     # ── Explanation ───────────────────────────────────────────────────────────
     expl = {"explanation_text": "", "top_features": [], "plot_path": None}
+
     if EXPLAINER:
         try:
             expl = EXPLAINER.explain(fc, subject_id=subject_id,
                                      risk_score=round(risk_score, 3), stage=stage)
         except Exception as e:
             print(f"[Predict] Explainer error: {e}")
+
+    # Inline fallback — always works even on Render with no SHAP
+    if not expl.get("explanation_text"):
+        findings = []
+        thresholds = {
+            "heart_rate":  ("tachycardia",      lambda v: v > 100),
+            "mean_bp":     ("hypotension",       lambda v: v < 65),
+            "resp_rate":   ("tachypnea",         lambda v: v > 20),
+            "lactate":     ("elevated lactate",  lambda v: v > 2.0),
+            "temperature": ("fever",             lambda v: v > 38.3),
+            "wbc":         ("leukocytosis",      lambda v: v > 12.0),
+            "systolic_bp": ("low systolic BP",   lambda v: v < 90),
+        }
+        for i, col in enumerate(FEATURE_COLS):
+            if col in thresholds:
+                label, check = thresholds[col]
+                if check(fc[i]):
+                    findings.append(label)
+
+        if findings:
+            text = "Indicators: " + " + ".join(findings[:3]) + "."
+            if stage == "Severe Sepsis":
+                text += " Immediate clinical attention recommended."
+            elif stage == "Early Sepsis":
+                text += " Close monitoring advised."
+        else:
+            text = "Vitals within acceptable range. Continue routine monitoring."
+        expl["explanation_text"] = text
 
     # ── Feature status grid ───────────────────────────────────────────────────
     feat_status = []
