@@ -407,23 +407,24 @@ def run_prediction(features: np.ndarray, subject_id: int = 0) -> dict:
             print(f"[Predict] Explainer error: {e}")
 
     # Inline fallback — always works even on Render with no SHAP
+    # Inline fallback — always works even on Render with no SHAP
     if not expl.get("explanation_text"):
         findings = []
-        thresholds = {
-            "heart_rate":  ("tachycardia",      lambda v: v > 100),
-            "mean_bp":     ("hypotension",       lambda v: v < 65),
-            "resp_rate":   ("tachypnea",         lambda v: v > 20),
-            "lactate":     ("elevated lactate",  lambda v: v > 2.0),
-            "temperature": ("fever",             lambda v: v > 38.3),
-            "wbc":         ("leukocytosis",      lambda v: v > 12.0),
-            "systolic_bp": ("low systolic BP",   lambda v: v < 90),
-        }
-        for i, col in enumerate(FEATURE_COLS):
-            if col in thresholds:
-                label, check = thresholds[col]
-                if check(fc[i]):
-                    findings.append(label)
-
+        # Ordered by clinical severity — most critical first
+        checks = [
+            ("lactate",     5, "elevated lactate",  lambda v: v > 2.0),
+            ("mean_bp",     1, "hypotension",        lambda v: v < 65),
+            ("systolic_bp", 3, "low systolic BP",    lambda v: v < 90),
+            ("heart_rate",  0, "tachycardia",        lambda v: v > 100),
+            ("resp_rate",   2, "tachypnea",          lambda v: v > 20),
+            ("temperature", 4, "fever",              lambda v: v > 38.3),
+            ("wbc",         6, "leukocytosis",       lambda v: v > 12.0),
+            ("heart_rate",  0, "bradycardia",        lambda v: v < 50),
+            ("temperature", 4, "hypothermia",        lambda v: v < 36.0),
+        ]
+        for col, idx, label, check in checks:
+            if check(fc[idx]):
+                findings.append(label)
         if findings:
             text = "Indicators: " + " + ".join(findings[:3]) + "."
             if stage == "Severe Sepsis":
