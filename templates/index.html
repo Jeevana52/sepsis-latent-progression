@@ -1,871 +1,555 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SepsisProg — Latent Progression Modelling</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
-:root {
-  --bg:        #080d14;
-  --bg2:       #0d1520;
-  --bg3:       #111d2c;
-  --surface:   #141f30;
-  --border:    #1e2f45;
-  --border2:   #243650;
-  --accent:    #2563eb;
-  --accent2:   #3b82f6;
-  --red:       #ef4444;
-  --orange:    #f97316;
-  --green:     #22c55e;
-  --text:      #e2e8f0;
-  --muted:     #64748b;
-  --mono:      'DM Mono', monospace;
-  --sans:      'Outfit', sans-serif;
+:root { --t: background .3s,color .3s,border-color .3s,box-shadow .3s; }
+[data-theme="dark"] {
+  --bg:#060b12; --bg2:#0b1220; --surface:#0f1929; --card:#111e2e; --card2:#152033;
+  --border:#1b2d42; --border2:#243650;
+  --text:#dde6f0; --text2:#92a8c0; --muted:#4f6680;
+  --accent:#1e6fde; --accent-lt:#4a90f5; --accent-glow:rgba(30,111,222,0.20);
+  --red:#e85454; --red-lt:rgba(232,84,84,0.12);
+  --orange:#f0802a; --orange-lt:rgba(240,128,42,0.12);
+  --green:#27c47a; --green-lt:rgba(39,196,122,0.12);
+  --shadow:0 4px 24px rgba(0,0,0,0.45);
 }
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: var(--sans);
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
+[data-theme="light"] {
+  --bg:#f3f7fc; --bg2:#eaf0f8; --surface:#ffffff; --card:#ffffff; --card2:#f6f9fd;
+  --border:#d8e4ef; --border2:#bfcfdf;
+  --text:#1a2535; --text2:#415570; --muted:#7b96b2;
+  --accent:#1557c8; --accent-lt:#1557c8; --accent-glow:rgba(21,87,200,0.12);
+  --red:#c93b3b; --red-lt:rgba(201,59,59,0.09);
+  --orange:#b85f0d; --orange-lt:rgba(184,95,13,0.09);
+  --green:#168a50; --green-lt:rgba(22,138,80,0.09);
+  --shadow:0 2px 14px rgba(0,30,80,0.08);
 }
-
-/* ── Grid bg ── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* ── Header ── */
-.header {
-  position: relative;
-  z-index: 10;
-  padding: 24px 40px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(8px);
-}
-
-.logo-mark {
-  width: 36px; height: 36px;
-  background: linear-gradient(135deg, #1d4ed8, #2563eb);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono);
-  font-size: 14px; font-weight: 500;
-  color: #fff; letter-spacing: -1px;
-  box-shadow: 0 0 20px rgba(37,99,235,0.3);
-}
-
-.header-text h1 {
-  font-size: 16px; font-weight: 600; letter-spacing: -0.3px;
-}
-
-.header-text p {
-  font-size: 12px; color: var(--muted); margin-top: 1px;
-}
-
-.status-pill {
-  margin-left: auto;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--green);
-  background: rgba(34,197,94,0.1);
-  border: 1px solid rgba(34,197,94,0.2);
-  border-radius: 20px;
-  padding: 3px 10px;
-}
-
-/* ── Layout ── */
-.page {
-  position: relative;
-  z-index: 1;
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 48px 24px 80px;
-}
-
-.hero {
-  text-align: center;
-  margin-bottom: 56px;
-}
-
-.hero-tag {
-  display: inline-block;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 2px;
-  color: var(--accent2);
-  text-transform: uppercase;
-  margin-bottom: 20px;
-  padding: 4px 12px;
-  border: 1px solid rgba(59,130,246,0.3);
-  border-radius: 20px;
-}
-
-.hero h2 {
-  font-size: clamp(28px, 5vw, 44px);
-  font-weight: 300;
-  letter-spacing: -1.5px;
-  line-height: 1.15;
-  margin-bottom: 16px;
-}
-
-.hero h2 strong {
-  font-weight: 600;
-  background: linear-gradient(90deg, #60a5fa, #818cf8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.hero p {
-  color: var(--muted);
-  font-size: 16px;
-  font-weight: 300;
-  max-width: 560px;
-  margin: 0 auto;
-  line-height: 1.7;
-}
-
-/* ── Tab switcher ── */
-.tabs {
-  display: flex;
-  gap: 4px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 4px;
-  margin-bottom: 28px;
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 7px;
-  background: none;
-  color: var(--muted);
-  font-family: var(--sans);
-  font-size: 14px;
-  font-weight: 400;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.tab-btn.active {
-  background: var(--accent);
-  color: #fff;
-  font-weight: 500;
-  box-shadow: 0 0 16px rgba(37,99,235,0.35);
-}
-
-/* ── Card ── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 18px 24px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 10px;
-}
-
-.card-header-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
-}
-
-.card-header h3 {
-  font-size: 14px; font-weight: 500;
-}
-
-.card-body { padding: 28px 24px; }
-
-/* ── Form panels ── */
-.form-panel { display: none; }
-.form-panel.active { display: block; }
-
-/* ── Manual entry grid ── */
-.vital-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.field-group { display: flex; flex-direction: column; gap: 6px; }
-
-.field-group label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.field-group input[type="number"],
-.field-group input[type="text"] {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 14px;
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.field-group input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
-}
-
-.field-group .hint {
-  font-size: 11px;
-  color: var(--muted);
-  font-family: var(--mono);
-}
-
-/* ── File upload zone ── */
-.upload-zone {
-  border: 2px dashed var(--border2);
-  border-radius: 12px;
-  padding: 48px 24px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-}
-
-.upload-zone:hover,
-.upload-zone.drag-over {
-  border-color: var(--accent);
-  background: rgba(37,99,235,0.05);
-}
-
-.upload-icon {
-  width: 48px; height: 48px;
-  margin: 0 auto 16px;
-  border: 1px solid var(--border2);
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px;
-}
-
-.upload-zone h4 {
-  font-size: 15px; font-weight: 500; margin-bottom: 6px;
-}
-
-.upload-zone p {
-  font-size: 13px; color: var(--muted); margin-bottom: 16px;
-}
-
-.upload-zone input[type="file"] {
-  position: absolute; inset: 0;
-  opacity: 0; cursor: pointer; width: 100%; height: 100%;
-}
-
-.file-pill {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(37,99,235,0.1);
-  border: 1px solid rgba(37,99,235,0.3);
-  border-radius: 20px;
-  padding: 5px 12px;
-  font-family: var(--mono);
-  font-size: 12px; color: var(--accent2);
-}
-
-.format-tags {
-  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
-  margin-top: 12px;
-}
-
-.fmt-tag {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px 7px;
-}
-
-/* ── Patient ID ── */
-.pid-row {
-  display: flex; align-items: center; gap: 16px;
-  margin-bottom: 24px;
-  padding: 12px 16px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-}
-
-.pid-row label {
-  font-size: 12px; color: var(--muted);
-  text-transform: uppercase; letter-spacing: 0.5px;
-  white-space: nowrap;
-}
-
-.pid-row input {
-  background: none;
-  border: none;
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 14px;
-  outline: none;
-  flex: 1;
-}
-
-/* ── Submit button ── */
-.submit-btn {
-  width: 100%;
-  padding: 14px;
-  background: var(--accent);
-  border: none;
-  border-radius: 10px;
-  color: #fff;
-  font-family: var(--sans);
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-  overflow: hidden;
-  margin-top: 8px;
-  box-shadow: 0 4px 20px rgba(37,99,235,0.3);
-}
-
-.submit-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
-.submit-btn:active { transform: translateY(0); }
-
-.submit-btn.loading { pointer-events: none; }
-.submit-btn.loading::after {
-  content: '';
-  position: absolute;
-  top: 0; left: -100%;
-  width: 100%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-  animation: shimmer 1.2s infinite;
-}
-
-@keyframes shimmer { to { left: 100%; } }
-
-/* ── Info cards row ── */
-.info-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 40px;
-}
-
-@media (max-width: 600px) { .info-row { grid-template-columns: 1fr; } }
-
-.info-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-}
-
-.info-card-icon {
-  font-size: 20px; margin-bottom: 10px;
-}
-
-.info-card h4 { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
-.info-card p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
-
-/* ── Spinner overlay ── */
-#loading-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(8,13,20,0.85);
-  backdrop-filter: blur(4px);
-  z-index: 100;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 20px;
-}
-
-#loading-overlay.show { display: flex; }
-
-.spinner {
-  width: 48px; height: 48px;
-  border: 3px solid var(--border2);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-#loading-overlay p {
-  font-family: var(--mono);
-  font-size: 13px;
-  color: var(--muted);
-}
-
-/* ── Result panel (injected after prediction) ── */
-#result-panel { display: none; margin-top: 32px; }
-#result-panel.show { display: block; }
-
-.risk-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 28px;
-  margin-bottom: 20px;
-}
-
-.risk-top {
-  display: flex; align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  flex-wrap: wrap; gap: 16px;
-}
-
-.risk-score-block { display: flex; flex-direction: column; }
-
-.risk-label {
-  font-family: var(--mono);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-
-.risk-number {
-  font-family: var(--mono);
-  font-size: 52px;
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: -2px;
-}
-
-.risk-number.low    { color: var(--green); }
-.risk-number.medium { color: var(--orange); }
-.risk-number.high   { color: var(--red); }
-
-.stage-badge {
-  padding: 6px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-}
-
-.stage-badge.normal  { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
-.stage-badge.early   { background: rgba(249,115,22,0.12); color: var(--orange); border: 1px solid rgba(249,115,22,0.25); }
-.stage-badge.severe  { background: rgba(239,68,68,0.12);  color: var(--red);    border: 1px solid rgba(239,68,68,0.25); }
-
-/* Probability bars */
-.prob-bars { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
-
-.prob-row { display: flex; align-items: center; gap: 12px; }
-.prob-name { font-size: 13px; width: 130px; color: var(--muted); }
-.prob-bar-wrap { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
-.prob-bar { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
-.prob-val  { font-family: var(--mono); font-size: 12px; width: 48px; text-align: right; }
-
-.bar-green  { background: var(--green); }
-.bar-orange { background: var(--orange); }
-.bar-red    { background: var(--red); }
-
-/* Explanation box */
-.expl-box {
-  background: var(--bg3);
-  border-left: 3px solid var(--accent);
-  border-radius: 0 8px 8px 0;
-  padding: 14px 16px;
-  font-size: 14px;
-  line-height: 1.65;
-  color: var(--text);
-  margin-bottom: 20px;
-}
-
-/* Feature grid in result */
-.feat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 10px;
-}
-
-.feat-cell {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px;
-}
-
-.feat-cell.high   { border-color: rgba(239,68,68,0.4); }
-.feat-cell.low    { border-color: rgba(249,115,22,0.4); }
-.feat-cell.normal { border-color: rgba(34,197,94,0.2); }
-
-.feat-cell-name  { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-.feat-cell-val   { font-family: var(--mono); font-size: 18px; font-weight: 500; }
-.feat-cell-range { font-size: 10px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
-.feat-cell-flag  { font-size: 10px; margin-top: 3px; font-weight: 500; }
-.feat-cell.high .feat-cell-flag  { color: var(--red); }
-.feat-cell.low  .feat-cell-flag  { color: var(--orange); }
-.feat-cell.normal .feat-cell-flag{ color: var(--green); }
-
-/* SHAP plot */
-.shap-img {
-  width: 100%;
-  border-radius: 8px;
-  margin-top: 16px;
-  border: 1px solid var(--border);
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:var(--t);overflow-x:hidden}
+[data-theme="dark"] body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(30,111,222,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(30,111,222,.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+
+/* ── HEADER ── */
+.hdr{position:sticky;top:0;z-index:200;display:flex;align-items:center;gap:13px;padding:14px 36px;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:var(--shadow);transition:var(--t)}
+.logo{display:flex;align-items:center;gap:11px;text-decoration:none}
+.logo-mark{width:36px;height:36px;background:linear-gradient(140deg,#1558c8,#1e6fde);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#fff;letter-spacing:-.5px;box-shadow:0 0 0 1px rgba(255,255,255,.07),0 3px 14px var(--accent-glow);flex-shrink:0}
+.logo-title{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.2px}
+.logo-sub{font-size:10px;color:var(--muted);margin-top:1px;letter-spacing:.1px}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:9px}
+.theme-btn{width:34px;height:34px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent)}
+.theme-btn .i-sun{display:none}.theme-btn .i-moon{display:block}
+[data-theme="light"] .theme-btn .i-sun{display:block}[data-theme="light"] .theme-btn .i-moon{display:none}
+.chip{display:flex;align-items:center;gap:6px;padding:5px 11px;background:var(--green-lt);border:1px solid rgba(39,196,122,.2);border-radius:20px;font-size:11px;font-weight:500;color:var(--green);font-family:'IBM Plex Mono',monospace}
+.chip-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 2.2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── HERO ── */
+.hero{position:relative;z-index:1;text-align:center;padding:56px 24px 48px}
+[data-theme="dark"] .hero::before{content:'';position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse 70% 55% at 50% 0%,rgba(30,111,222,.09),transparent 70%)}
+.hero-tag{display:inline-flex;align-items:center;gap:7px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent-lt);background:var(--accent-glow);border:1px solid rgba(30,111,222,.22);border-radius:20px;padding:5px 13px;margin-bottom:20px}
+.hero h2{font-size:clamp(24px,4vw,40px);font-weight:700;letter-spacing:-1.2px;line-height:1.18;margin-bottom:14px;color:var(--text)}
+[data-theme="dark"] .hero h2 em{font-style:normal;background:linear-gradient(90deg,#6aadff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+[data-theme="light"] .hero h2 em{font-style:normal;color:var(--accent)}
+.hero p{font-size:14px;font-weight:300;line-height:1.8;color:var(--text2);max-width:520px;margin:0 auto}
+
+/* ── CONTENT WRAPPER ── */
+.content{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:0 20px 80px}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:3px;background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:3px;margin-bottom:18px;transition:var(--t)}
+.tab-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 14px;border:none;border-radius:8px;background:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:13px;font-weight:500;color:var(--muted);transition:all .2s}
+.tab-btn.active{background:var(--accent);color:#fff;box-shadow:0 2px 10px var(--accent-glow)}
+.tab-btn:hover:not(.active){color:var(--text)}
+
+/* ── FORM CARD ── */
+.fcard{background:var(--card);border:1px solid var(--border);border-radius:15px;overflow:hidden;box-shadow:var(--shadow);transition:var(--t)}
+.fcard-hdr{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.hdr-dot{width:7px;height:7px;background:var(--accent);border-radius:50%;box-shadow:0 0 7px var(--accent-glow)}
+.fcard-hdr h3{font-size:13px;font-weight:600;color:var(--text);letter-spacing:-.1px}
+.fbody{padding:22px}
+.fpanel{display:none}.fpanel.active{display:block}
+
+/* Patient ID */
+.pid-wrap{display:flex;align-items:stretch;background:var(--bg2);border:1.5px solid var(--border);border-radius:9px;margin-bottom:18px;overflow:hidden;transition:border-color .2s}
+.pid-wrap:focus-within{border-color:var(--accent)}
+.pid-lbl{padding:0 13px;font-size:10px;font-family:'IBM Plex Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);background:var(--card2);border-right:1px solid var(--border);display:flex;align-items:center;white-space:nowrap;font-weight:500}
+.pid-in{flex:1;background:none;border:none;outline:none;padding:11px 13px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text)}
+
+/* Vitals grid */
+.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:18px}
+@media(max-width:580px){.vgrid{grid-template-columns:repeat(2,1fr)}}
+.vf{display:flex;flex-direction:column;gap:4px}
+.vlabel{display:flex;align-items:baseline;justify-content:space-between;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.vunit{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:400;color:var(--accent-lt);letter-spacing:.5px}
+.vin{width:100%;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:14px;outline:none;transition:border-color .18s,box-shadow .18s;-moz-appearance:textfield}
+.vin::-webkit-inner-spin-button,.vin::-webkit-outer-spin-button{-webkit-appearance:none}
+.vin::placeholder{color:var(--muted);font-size:11px}
+.vin:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);background:var(--card2)}
+.vin.ok{border-color:var(--green);box-shadow:0 0 0 2px rgba(39,196,122,.1)}
+.vin.err{border-color:var(--red);box-shadow:0 0 0 2px rgba(232,84,84,.1)}
+.vhint{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--muted);transition:color .15s}
+.vhint.ok{color:var(--green)}.vhint.err{color:var(--red)}
+.wbc-row{max-width:220px;margin-bottom:18px}
+.ferr{display:none;padding:10px 13px;background:var(--red-lt);border:1px solid rgba(232,84,84,.22);border-radius:8px;font-size:12px;color:var(--red);margin-bottom:13px;line-height:1.5}
+.ferr.show{display:block}
+
+/* Submit button */
+.sbtn{width:100%;padding:13px;background:linear-gradient(135deg,#1558c8,#1e6fde);border:none;border-radius:9px;color:#fff;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 3px 16px var(--accent-glow);transition:opacity .2s,transform .1s;letter-spacing:.1px;position:relative;overflow:hidden}
+.sbtn:hover{opacity:.9;box-shadow:0 5px 24px rgba(30,111,222,.38)}
+.sbtn:active{transform:scale(.99)}
+.sbtn.busy{pointer-events:none;opacity:.65}
+.sbtn.busy::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);animation:shimmer 1.1s infinite}
+@keyframes shimmer{to{left:100%}}
+
+/* Upload zone */
+.uzone{border:2px dashed var(--border2);border-radius:13px;padding:48px 22px;text-align:center;cursor:pointer;position:relative;transition:border-color .22s,background .22s;margin-bottom:18px}
+.uzone:hover,.uzone.dg{border-color:var(--accent);background:var(--accent-glow)}
+.uzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.uicon{width:50px;height:50px;margin:0 auto 14px;border:1px solid var(--border2);border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--accent-lt);background:var(--card2);transition:border-color .2s}
+.uzone:hover .uicon{border-color:var(--accent)}
+.uzone h4{font-size:14px;font-weight:600;margin-bottom:5px;color:var(--text)}
+.uzone p{font-size:12px;color:var(--text2);margin-bottom:13px}
+.ftags{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.ftag{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:2px 7px}
+.fpill{display:none;align-items:center;gap:7px;margin-top:12px;padding:7px 13px;background:rgba(30,111,222,.1);border:1px solid rgba(30,111,222,.2);border-radius:7px;font-size:11px;color:var(--accent-lt);font-family:'IBM Plex Mono',monospace}
+.fpill.on{display:inline-flex}
+
+/* Loading overlay */
+#lov{display:none;position:fixed;inset:0;z-index:999;background:rgba(6,11,18,.82);backdrop-filter:blur(6px);flex-direction:column;align-items:center;justify-content:center;gap:16px}
+[data-theme="light"] #lov{background:rgba(243,247,252,.82)}
+#lov.on{display:flex}
+.spin{width:42px;height:42px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:sp .75s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#lov p{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text2)}
+
+/* ── RESULT ── */
+#rp{display:none;margin-top:24px}
+#rp.on{display:block;animation:fu .35s ease}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.rcard{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:26px;margin-bottom:14px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:var(--t)}
+.rcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--rc,var(--accent))}
+.rtop{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+.rslabel{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.rsval{font-family:'IBM Plex Mono',monospace;font-size:50px;font-weight:600;line-height:1;letter-spacing:-2px;color:var(--rc,var(--accent))}
+.sbadge{padding:7px 16px;border-radius:7px;font-size:13px;font-weight:600;letter-spacing:.2px;border:1.5px solid var(--rc,var(--accent));color:var(--rc,var(--accent));background:color-mix(in srgb,var(--rc,var(--accent)) 10%,transparent);align-self:flex-start}
+.slabel{font-size:10px;font-family:'IBM Plex Mono',monospace;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.pbars{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.prow{display:flex;align-items:center;gap:11px}
+.plbl{font-size:12px;width:116px;color:var(--text2);flex-shrink:0}
+.ptrack{flex:1;height:7px;background:var(--bg2);border-radius:4px;overflow:hidden}
+.pfill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.2,.8,.3,1)}
+.ppct{font-family:'IBM Plex Mono',monospace;font-size:11px;width:36px;text-align:right;color:var(--text2)}
+.rexpl{border-left:3px solid var(--accent);padding:11px 14px;background:var(--accent-glow);border-radius:0 8px 8px 0;font-size:13px;line-height:1.7;color:var(--text);margin-bottom:20px}
+.vsgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:9px}
+.vscell{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:12px;transition:border-color .2s}
+.vscell.is-h{border-color:rgba(232,84,84,.38);background:var(--red-lt)}
+.vscell.is-l{border-color:rgba(240,128,42,.38);background:var(--orange-lt)}
+.vscell.is-n{border-color:rgba(39,196,122,.28);background:var(--green-lt)}
+.vcname{font-size:10px;color:var(--muted);margin-bottom:4px}
+.vcval{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:500}
+.vcrange{font-size:9px;color:var(--muted);margin-top:2px;font-family:'IBM Plex Mono',monospace}
+.vcflag{font-size:10px;margin-top:3px;font-weight:600}
+.is-h .vcval{color:var(--red)}.is-h .vcflag{color:var(--red)}
+.is-l .vcval{color:var(--orange)}.is-l .vcflag{color:var(--orange)}
+.is-n .vcval{color:var(--green)}.is-n .vcflag{color:var(--green)}
+.gcard{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:26px;margin-bottom:14px;text-align:center;box-shadow:var(--shadow)}
+.shcard{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:22px;margin-bottom:14px;box-shadow:var(--shadow)}
+.shimg{width:100%;border-radius:7px;border:1px solid var(--border);margin-top:9px}
+.shnote{font-size:11px;color:var(--muted);margin-top:7px}
+
+/* ── INFO CARDS (one instance only) ── */
+.infobar{margin-top:44px;display:grid;grid-template-columns:repeat(3,1fr);gap:13px}
+@media(max-width:580px){.infobar{grid-template-columns:1fr}}
+.icard{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:20px;box-shadow:var(--shadow);transition:var(--t),border-color .2s}
+.icard:hover{border-color:var(--accent)}
+.icard-icon{width:34px;height:34px;margin-bottom:12px;border-radius:8px;background:var(--accent-glow);border:1px solid rgba(30,111,222,.18);display:flex;align-items:center;justify-content:center;color:var(--accent-lt)}
+.icard h4{font-size:13px;font-weight:600;margin-bottom:7px;color:var(--text)}
+.icard p{font-size:12px;color:var(--text2);line-height:1.6}
+
+/* ── FOOTER ── */
+.foot{text-align:center;padding:28px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;transition:var(--t)}
 </style>
 </head>
-
 <body>
 
-<!-- Header -->
-<header class="header">
-  <div class="logo-mark">Sp</div>
-  <div class="header-text">
-    <h1>SepsisProg</h1>
-    <p>Latent Progression Modelling· MIMIC-IV · VAE + ClinicalBERT</p>
-  </div>
-  <span class="status-pill">● System Ready</span>
-</header>
-
-<!-- Loading overlay -->
-<div id="loading-overlay">
-  <div class="spinner"></div>
+<!-- LOADING OVERLAY -->
+<div id="lov">
+  <div class="spin"></div>
   <p>Running prediction pipeline…</p>
 </div>
 
-<!-- Page -->
-<main class="page">
-
-  <!-- Hero -->
-  <div class="hero">
-    <span class="hero-tag">Explainable AI · Clinical Decision Support</span>
-    <h2>Detect sepsis risk<br/><strong>before it escalates</strong></h2>
-    <p>Upload a patient's medical document or enter ICU vitals manually. Our VAE-based model analyzes physiological patterns and provides an interpretable risk assessment with SHAP explanations.</p>
-  </div>
-
-  <!-- Tab switcher -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('manual', this)">
-       &nbsp;Manual Entry
-    </button>
-    <button class="tab-btn" onclick="switchTab('file', this)">
-       &nbsp;Upload Document
-    </button>
-  </div>
-
-  <!-- Main card -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-header-dot"></div>
-      <h3 id="card-title">Enter patient vitals</h3>
+<!-- HEADER -->
+<header class="hdr">
+  <a class="logo" href="/">
+    <div class="logo-mark">SP</div>
+    <div>
+      <div class="logo-title">SepsisProg</div>
+      <div class="logo-sub">Latent Progression Modelling · VAE + ClinicalBERT · MIMIC-IV</div>
     </div>
-    <div class="card-body">
+  </a>
+  <div class="hdr-right">
+    <div class="chip"><div class="chip-dot"></div>System Ready</div>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="i-sun" xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path stroke-linecap="round" d="M12 2v2m0 16v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M2 12h2m16 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="i-moon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
+    </button>
+  </div>
+</header>
 
-      <!-- Patient ID row -->
-      <div class="pid-row">
-        <label>Patient ID</label>
-        <input type="text" id="subject-id" placeholder="e.g. 10119770" maxlength="12"/>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">
+    <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>
+    Explainable AI · Clinical Decision Support · Final Year Project
+  </div>
+  <h2>Predict sepsis progression<br/><em>using latent space modelling</em></h2>
+  <p>An end-to-end deep learning pipeline — LSTM vitals encoding, ClinicalBERT clinical notes, VAE latent modelling — stratifying ICU patients by sepsis severity with full SHAP explainability.</p>
+</section>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('manual',this)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+      Manual Entry
+    </button>
+    <button class="tab-btn" onclick="switchTab('file',this)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
+      Upload Document
+    </button>
+  </div>
+
+  <!-- Form Card -->
+  <div class="fcard">
+    <div class="fcard-hdr">
+      <div class="hdr-dot"></div>
+      <h3 id="ctitle">Enter patient vitals</h3>
+    </div>
+    <div class="fbody">
+
+      <!-- Patient ID -->
+      <div class="pid-wrap">
+        <span class="pid-lbl">Patient ID</span>
+        <input class="pid-in" type="text" id="pid" placeholder="e.g. 10119770" maxlength="12"/>
       </div>
 
-      <!-- MANUAL ENTRY PANEL -->
-      <div id="panel-manual" class="form-panel active">
-        <div class="vital-grid" id="vital-grid"></div>
+      <!-- MANUAL PANEL -->
+      <div id="panel-manual" class="fpanel active">
+        <div class="vgrid" id="vgrid">
+          <!-- heart rate -->
+          <div class="vf">
+            <label class="vlabel">Heart Rate<span class="vunit">BPM</span></label>
+            <input class="vin" type="number" id="f0" name="heart_rate" placeholder="60–100" min="20" max="250" step="1" oninput="lv(this,20,250,'h0')" onblur="lv(this,20,250,'h0')" onwheel="this.blur()"/>
+            <span class="vhint" id="h0">Normal: 60–100 bpm</span>
+          </div>
+          <!-- mean bp -->
+          <div class="vf">
+            <label class="vlabel">Mean BP (MAP)<span class="vunit">MMHG</span></label>
+            <input class="vin" type="number" id="f1" name="mean_bp" placeholder="70–100" min="10" max="180" step="1" oninput="lv(this,10,180,'h1')" onblur="lv(this,10,180,'h1')" onwheel="this.blur()"/>
+            <span class="vhint" id="h1">Normal: 70–100 mmHg</span>
+          </div>
+          <!-- resp rate -->
+          <div class="vf">
+            <label class="vlabel">Respiratory Rate<span class="vunit">BR/MIN</span></label>
+            <input class="vin" type="number" id="f2" name="resp_rate" placeholder="12–20" min="4" max="60" step="1" oninput="lv(this,4,60,'h2')" onblur="lv(this,4,60,'h2')" onwheel="this.blur()"/>
+            <span class="vhint" id="h2">Normal: 12–20 br/min</span>
+          </div>
+          <!-- systolic bp -->
+          <div class="vf">
+            <label class="vlabel">Systolic BP<span class="vunit">MMHG</span></label>
+            <input class="vin" type="number" id="f3" name="systolic_bp" placeholder="90–140" min="50" max="260" step="1" oninput="lv(this,50,260,'h3')" onblur="lv(this,50,260,'h3')" onwheel="this.blur()"/>
+            <span class="vhint" id="h3">Normal: 90–140 mmHg</span>
+          </div>
+          <!-- temperature -->
+          <div class="vf">
+            <label class="vlabel">Temperature<span class="vunit">°C</span></label>
+            <input class="vin" type="number" id="f4" name="temperature" placeholder="36–38" min="30" max="43" step="0.1" oninput="lv(this,30,43,'h4')" onblur="lv(this,30,43,'h4')" onwheel="this.blur()"/>
+            <span class="vhint" id="h4">Normal: 36–38 °C</span>
+          </div>
+          <!-- lactate -->
+          <div class="vf">
+            <label class="vlabel">Lactate<span class="vunit">MMOL/L</span></label>
+            <input class="vin" type="number" id="f5" name="lactate" placeholder="0.5–2.0" min="0.1" max="20" step="0.1" oninput="lv(this,0.1,20,'h5')" onblur="lv(this,0.1,20,'h5')" onwheel="this.blur()"/>
+            <span class="vhint" id="h5">Normal: 0.5–2.0 mmol/L</span>
+          </div>
+        </div>
+
+        <!-- WBC separate -->
+        <div class="wbc-row">
+          <div class="vf">
+            <label class="vlabel">WBC Count<span class="vunit">×10³/μL</span></label>
+            <input class="vin" type="number" id="f6" name="wbc" placeholder="4–11" min="0.1" max="150" step="0.1" oninput="lv(this,0.1,150,'h6')" onblur="lv(this,0.1,150,'h6')" onwheel="this.blur()"/>
+            <span class="vhint" id="h6">Normal: 4–11 ×10³/μL</span>
+          </div>
+        </div>
+
+        <div class="ferr" id="merr"></div>
+        <button class="sbtn" id="sbtn" onclick="submitManual()">Analyze Patient Risk →</button>
       </div>
 
-      <!-- FILE UPLOAD PANEL -->
-      <div id="panel-file" class="form-panel">
-        <div class="upload-zone" id="drop-zone">
-          <input type="file" id="file-input" accept=".pdf,.csv,.txt"
-                 onchange="handleFileSelect(this)"/>
-          <div class="upload-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
+      <!-- FILE PANEL -->
+      <div id="panel-file" class="fpanel">
+        <div class="uzone" id="dz">
+          <input type="file" id="fi" accept=".pdf,.csv,.txt" onchange="onFile(this)"/>
+          <div class="uicon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/></svg>
           </div>
           <h4>Drop patient document here</h4>
           <p>Discharge notes, ICU CSV, or clinical text</p>
-          <div class="format-tags">
-            <span class="fmt-tag">PDF</span>
-            <span class="fmt-tag">CSV</span>
-            <span class="fmt-tag">TXT</span>
+          <div class="ftags">
+            <span class="ftag">PDF</span><span class="ftag">CSV</span><span class="ftag">TXT</span>
           </div>
-          <div id="file-badge" style="margin-top:12px;display:none">
-            <span class="file-pill">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-              <span id="file-name">—</span>
-            </span>
-          </div>
+          <span class="fpill" id="fpill">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+            <span id="fn">—</span>
+          </span>
         </div>
+        <div class="ferr" id="ferr2"></div>
+        <button class="sbtn" onclick="submitFile()">Analyze Document →</button>
       </div>
- 
-
-      <!-- Submit -->
-      <button class="submit-btn" id="submit-btn" onclick="runPrediction()">
-        Analyze Patient Risk →
-      </button>
 
     </div>
   </div>
 
-  <!-- ── RESULT PANEL (shown after prediction) ── -->
-  <div id="result-panel">
+  <!-- RESULT PANEL (inline, populated by JS) -->
+  <div id="rp"></div>
 
-    <!-- Risk card -->
-    <div class="risk-card">
-      <div class="risk-top">
-        <div class="risk-score-block">
-          <span class="risk-label">Risk Score</span>
-          <span class="risk-number" id="r-score">—</span>
-        </div>
-        <span class="stage-badge" id="r-stage">—</span>
+  <!-- INFO CARDS — single instance, below everything -->
+  <div class="infobar" aria-label="System capabilities">
+    <div class="icard">
+      <div class="icard-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15"/></svg>
       </div>
-
-      <!-- Probability bars -->
-      <div class="prob-bars">
-        <div class="prob-row">
-          <span class="prob-name">Normal</span>
-          <div class="prob-bar-wrap"><div class="prob-bar bar-green" id="bar-normal" style="width:0%"></div></div>
-          <span class="prob-val" id="pv-normal">0%</span>
-        </div>
-        <div class="prob-row">
-          <span class="prob-name">Early Sepsis</span>
-          <div class="prob-bar-wrap"><div class="prob-bar bar-orange" id="bar-early" style="width:0%"></div></div>
-          <span class="prob-val" id="pv-early">0%</span>
-        </div>
-        <div class="prob-row">
-          <span class="prob-name">Severe Sepsis</span>
-          <div class="prob-bar-wrap"><div class="prob-bar bar-red" id="bar-severe" style="width:0%"></div></div>
-          <span class="prob-val" id="pv-severe">0%</span>
-        </div>
-      </div>
-
-      <!-- Explanation -->
-      <div class="expl-box" id="r-expl">—</div>
-
-      <!-- Feature status -->
-      <div>
-        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Vital Status</div>
-        <div class="feat-grid" id="r-feat-grid"></div>
-      </div>
-
-      <!-- SHAP plot -->
-      <div id="shap-section" style="display:none">
-        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:20px 0 10px;">SHAP Feature Contributions</div>
-        <img class="shap-img" id="shap-img" src="" alt="SHAP explanation"/>
-      </div>
+      <h4>VAE Latent Modelling</h4>
+      <p>A Variational Autoencoder encodes ICU data into a 64-dim latent space, capturing the continuous trajectory from health to critical sepsis without explicit supervision.</p>
     </div>
-
-  </div><!-- end result panel -->
-
-  <!-- Info cards -->
-  <div class="info-row">
-    <div class="info-card">
-      <div class="info-card-icon"></div>
-      <h4>VAE Latent Modeling</h4>
-      <p>A Variational Autoencoder learns hidden disease progression states from combined structured vitals and clinical text.</p>
+    <div class="icard">
+      <div class="icard-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>
+      </div>
+      <h4>ClinicalBERT Encoder</h4>
+      <p>Medical notes encoded using Bio_ClinicalBERT (768-dim), capturing clinical nuances — "vasopressors", "septic shock" — invisible to structured data alone.</p>
     </div>
-    <div class="info-card">
-      <div class="info-card-icon"></div>
-      <h4>ClinicalBERT Text Encoder</h4>
-      <p>Medical notes are encoded using ClinicalBERT, capturing clinical language nuances invisible to structured data alone.</p>
-    </div>
-    <div class="info-card">
-      <div class="info-card-icon"></div>
+    <div class="icard">
+      <div class="icard-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/></svg>
+      </div>
       <h4>SHAP Explainability</h4>
-      <p>Every prediction comes with SHAP-based feature attributions showing exactly which vital signs drove the risk score.</p>
+      <p>Every prediction includes SHAP feature attributions, meeting clinical interpretability requirements — which vitals drove the risk score, ranked by contribution.</p>
     </div>
   </div>
 
-</main>
+</div>
+
+<footer class="foot">SepsisProg · MIMIC-IV · VAE + ClinicalBERT + LSTM · SHAP Explainability</footer>
 
 <script>
-// ── Vital field definitions ─────────────────────────────────────────────────
-const FIELDS = [
-  { col:"heart_rate",  label:"Heart Rate",       unit:"bpm",      placeholder:"60–100", step:"1"   },
-  { col:"mean_bp",     label:"Mean BP (MAP)",     unit:"mmHg",     placeholder:"70–100", step:"1"   },
-  { col:"resp_rate",   label:"Respiratory Rate",  unit:"br/min",   placeholder:"12–20",  step:"1"   },
-  { col:"systolic_bp", label:"Systolic BP",       unit:"mmHg",     placeholder:"90–140", step:"1"   },
-  { col:"temperature", label:"Temperature",       unit:"°C",       placeholder:"36–38",  step:"0.1" },
-  { col:"lactate",     label:"Lactate",           unit:"mmol/L",   placeholder:"0.5–2",  step:"0.1" },
-  { col:"wbc",         label:"WBC Count",         unit:"×10³/μL",  placeholder:"4–11",   step:"0.1" },
+// ── THEME ──────────────────────────────────────────────────
+function toggleTheme(){
+  const h=document.documentElement;
+  const t=h.getAttribute('data-theme')==='dark'?'light':'dark';
+  h.setAttribute('data-theme',t);
+  localStorage.setItem('spt',t);
+}
+(function(){const s=localStorage.getItem('spt');if(s)document.documentElement.setAttribute('data-theme',s)})();
+
+// ── TAB SWITCH ─────────────────────────────────────────────
+let curTab='manual';
+function switchTab(m,btn){
+  curTab=m;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.fpanel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+m).classList.add('active');
+  document.getElementById('ctitle').textContent=m==='manual'?'Enter patient vitals':'Upload patient document';
+  const rp=document.getElementById('rp');rp.classList.remove('on');rp.innerHTML='';
+}
+
+// ── LIVE VALIDATE ──────────────────────────────────────────
+function lv(el,min,max,hid){
+  const hint=document.getElementById(hid);
+  // Auto-trim implausibly long inputs (accidental concatenation)
+  if(el.value.length>String(Math.ceil(max)).length+2&&!el.value.includes('.')){
+    el.value=el.value.slice(0,String(Math.ceil(max)).length);
+  }
+  const val=parseFloat(el.value);
+  if(el.value===''){
+    el.classList.remove('ok','err');hint.className='vhint';
+    hint.textContent=`Normal: ${min}–${max}`;return true;
+  }
+  if(isNaN(val)||val<min||val>max){
+    el.classList.add('err');el.classList.remove('ok');
+    hint.className='vhint err';hint.textContent=`⚠ Enter ${min}–${max}`;return false;
+  }
+  el.classList.add('ok');el.classList.remove('err');
+  hint.className='vhint ok';hint.textContent=`✓ ${val}`;return true;
+}
+
+// ── FIELD DEFINITIONS ──────────────────────────────────────
+const FDS=[
+  {id:'f0',name:'heart_rate',  min:20, max:250, label:'Heart Rate'},
+  {id:'f1',name:'mean_bp',     min:10, max:180, label:'Mean BP'},
+  {id:'f2',name:'resp_rate',   min:4,  max:60,  label:'Respiratory Rate'},
+  {id:'f3',name:'systolic_bp', min:50, max:260, label:'Systolic BP'},
+  {id:'f4',name:'temperature', min:30, max:43,  label:'Temperature'},
+  {id:'f5',name:'lactate',     min:0.1,max:20,  label:'Lactate'},
+  {id:'f6',name:'wbc',         min:0.1,max:150, label:'WBC Count'},
 ];
 
-// Build vital grid
-const grid = document.getElementById('vital-grid');
-FIELDS.forEach(f => {
-  grid.innerHTML += `
-  <div class="field-group">
-    <label>${f.label} <span style="color:#3b82f6;font-weight:400;font-family:var(--mono);font-size:11px">${f.unit}</span></label>
-    <input type="number" id="field-${f.col}" placeholder="${f.placeholder}"
-           step="${f.step}" min="0"/>
-    <span class="hint">Normal: ${f.placeholder}</span>
-  </div>`;
-});
-
-// ── Tab switching ───────────────────────────────────────────────────────────
-let currentMode = 'manual';
-
-function switchTab(mode, btn) {
-  currentMode = mode;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + mode).classList.add('active');
-  document.getElementById('card-title').textContent =
-    mode === 'manual' ? 'Enter patient vitals' : 'Upload patient document';
+// ── SUBMIT MANUAL ──────────────────────────────────────────
+function submitManual(){
+  const eb=document.getElementById('merr');
+  const missing=[],invalid=[];
+  FDS.forEach((d,i)=>{
+    const el=document.getElementById(d.id);
+    const v=parseFloat(el.value);
+    if(el.value.trim()===''){missing.push(d.label);return;}
+    if(isNaN(v)||v<d.min||v>d.max){invalid.push(d.label);el.classList.add('err');}
+  });
+  if(missing.length||invalid.length){
+    let m='';
+    if(missing.length)m+=`Fill in: ${missing.join(', ')}. `;
+    if(invalid.length)m+=`Out of range: ${invalid.join(', ')}.`;
+    eb.textContent=m;eb.classList.add('show');return;
+  }
+  eb.classList.remove('show');
+  const fd=new FormData();
+  fd.append('input_mode','manual');
+  fd.append('subject_id',document.getElementById('pid').value||'0');
+  FDS.forEach(d=>{const v=document.getElementById(d.id).value;if(v)fd.append(d.name,v);});
+  go(fd);
 }
 
-// ── File select ─────────────────────────────────────────────────────────────
-let selectedFile = null;
-
-function handleFileSelect(input) {
-  if (input.files && input.files[0]) {
-    selectedFile = input.files[0];
-    document.getElementById('file-name').textContent = selectedFile.name;
-    document.getElementById('file-badge').style.display = 'block';
+// ── SUBMIT FILE ────────────────────────────────────────────
+let selFile=null;
+function onFile(inp){
+  if(inp.files&&inp.files[0]){
+    selFile=inp.files[0];
+    document.getElementById('fn').textContent=selFile.name;
+    document.getElementById('fpill').classList.add('on');
   }
 }
-
-// Drag and drop
-const dz = document.getElementById('drop-zone');
-dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
-dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-dz.addEventListener('drop', e => {
-  e.preventDefault(); dz.classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
-  if (f) {
-    selectedFile = f;
-    document.getElementById('file-name').textContent = f.name;
-    document.getElementById('file-badge').style.display = 'block';
-  }
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dg')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dg'));
+dz.addEventListener('drop',e=>{
+  e.preventDefault();dz.classList.remove('dg');
+  const f=e.dataTransfer.files[0];
+  if(f){selFile=f;document.getElementById('fn').textContent=f.name;document.getElementById('fpill').classList.add('on');}
 });
+function submitFile(){
+  const eb=document.getElementById('ferr2');
+  if(!selFile){eb.textContent='Please select a file first.';eb.classList.add('show');return;}
+  eb.classList.remove('show');
+  const fd=new FormData();
+  fd.append('input_mode','file');
+  fd.append('subject_id',document.getElementById('pid').value||'0');
+  fd.append('patient_file',selFile);
+  go(fd);
+}
 
-// ── Run prediction ──────────────────────────────────────────────────────────
-function runPrediction() {
-  const btn = document.getElementById('submit-btn');
-  const overlay = document.getElementById('loading-overlay');
-  btn.classList.add('loading');
-  btn.textContent = 'Analyzing…';
-  overlay.classList.add('show');
-
-  const fd = new FormData();
-  fd.append('subject_id', document.getElementById('subject-id').value || '0');
-
-  if (currentMode === 'manual') {
-    fd.append('input_mode', 'manual');
-    FIELDS.forEach(f => {
-      const val = document.getElementById('field-' + f.col).value;
-      if (val) fd.append(f.col, val);
-    });
-  } else {
-    fd.append('input_mode', 'file');
-    if (selectedFile) fd.append('patient_file', selectedFile);
-  }
-
-  fetch('/predict', { method: 'POST', body: fd })
-    .then(r => r.json())
-    .then(data => {
-      overlay.classList.remove('show');
-      btn.classList.remove('loading');
-      btn.textContent = 'Analyze Patient Risk →';
-      if (data.error) {
-        alert('Error: ' + data.error);
-        return;
-      }
-      renderResult(data);
+// ── FETCH ──────────────────────────────────────────────────
+function go(fd){
+  const lov=document.getElementById('lov');
+  const btn=document.getElementById('sbtn');
+  lov.classList.add('on');
+  if(btn){btn.classList.add('busy');btn.textContent='Analyzing…';}
+  fetch('/predict',{method:'POST',body:fd})
+    .then(r=>r.json())
+    .then(d=>{
+      lov.classList.remove('on');
+      if(btn){btn.classList.remove('busy');btn.textContent='Analyze Patient Risk →';}
+      if(d.error){alert('Error: '+d.error);return;}
+      render(d);
     })
-    .catch(err => {
-      overlay.classList.remove('show');
-      btn.classList.remove('loading');
-      btn.textContent = 'Analyze Patient Risk →';
-      alert('Network error: ' + err.message);
+    .catch(e=>{
+      lov.classList.remove('on');
+      if(btn){btn.classList.remove('busy');btn.textContent='Analyze Patient Risk →';}
+      alert('Network error: '+e.message);
     });
 }
 
-// ── Render result ───────────────────────────────────────────────────────────
-function renderResult(d) {
-  // Risk score
-  const scoreEl = document.getElementById('r-score');
-  scoreEl.textContent = (d.risk_pct).toFixed(1) + '%';
-  scoreEl.className = 'risk-number ' +
-    (d.stage_idx === 0 ? 'low' : d.stage_idx === 1 ? 'medium' : 'high');
+// ── RENDER RESULT ──────────────────────────────────────────
+function render(d){
+  const COL={0:'var(--green)',1:'var(--orange)',2:'var(--red)'};
+  const CLS={0:'is-n',  1:'is-l',  2:'is-h'};  // for cells
+  const BCLS={0:'normal',1:'early',2:'severe'};
+  const color=COL[d.stage_idx]||'var(--accent)';
 
-  // Stage badge
-  const stageEl = document.getElementById('r-stage');
-  stageEl.textContent = d.stage;
-  stageEl.className = 'stage-badge ' +
-    (d.stage_idx === 0 ? 'normal' : d.stage_idx === 1 ? 'early' : 'severe');
+  const pn=Math.round((d.prob_normal||0)*100);
+  const pe=Math.round((d.prob_early||0)*100);
+  const ps=Math.round((d.prob_severe||0)*100);
 
-  // Probability bars
-  const pn = Math.round(d.prob_normal * 100);
-  const pe = Math.round(d.prob_early  * 100);
-  const ps = Math.round(d.prob_severe * 100);
-  setTimeout(() => {
-    document.getElementById('bar-normal').style.width  = pn + '%';
-    document.getElementById('bar-early').style.width   = pe + '%';
-    document.getElementById('bar-severe').style.width  = ps + '%';
-  }, 50);
-  document.getElementById('pv-normal').textContent = pn + '%';
-  document.getElementById('pv-early').textContent  = pe + '%';
-  document.getElementById('pv-severe').textContent = ps + '%';
-
-  // Explanation
-  document.getElementById('r-expl').textContent = d.explanation || 'No explanation available.';
-
-  // Feature grid
-  const fg = document.getElementById('r-feat-grid');
-  fg.innerHTML = '';
-  (d.feature_status || []).forEach(f => {
-    const flagText = f.missing ? '— missing' : f.status === 'normal' ? '✓ normal' :
-                     f.status === 'high' ? '↑ high' : '↓ low';
-    fg.innerHTML += `
-    <div class="feat-cell ${f.missing ? '' : f.status}">
-      <div class="feat-cell-name">${f.display.split('(')[0].trim()}</div>
-      <div class="feat-cell-val">${f.missing ? '—' : f.value}</div>
-      <div class="feat-cell-range">Normal: ${f.range}</div>
-      <div class="feat-cell-flag">${flagText}</div>
-    </div>`;
+  // Vital cells
+  let vcHTML='';
+  (d.feature_status||[]).forEach(f=>{
+    const sc=f.missing?'':( f.status==='high'?'is-h':f.status==='low'?'is-l':'is-n');
+    const fl=f.missing?'— not detected':f.status==='normal'?'✓ normal':f.status==='high'?'↑ high':'↓ low';
+    vcHTML+=`<div class="vscell ${sc}"><div class="vcname">${(f.display||f.name).split('(')[0].trim()}</div><div class="vcval">${f.missing?'—':f.value}</div><div class="vcrange">Normal: ${f.range}</div><div class="vcflag">${fl}</div></div>`;
   });
 
-  // SHAP plot
-  if (d.shap_plot_url) {
-    document.getElementById('shap-img').src = d.shap_plot_url + '?t=' + Date.now();
-    document.getElementById('shap-section').style.display = 'block';
-  }
+  // Gauge
+  const pct=Math.round((d.risk_score||0)*100);
+  const R=100,CX=150,CY=128;
+  const ea=Math.PI+(pct/100)*Math.PI;
+  const x2=CX+R*Math.cos(ea), y2=CY+R*Math.sin(ea);
+  const lg=pct>50?1:0;
+  const gaugeHTML=`<svg viewBox="0 0 300 155" xmlns="http://www.w3.org/2000/svg" style="max-width:300px;display:block;margin:0 auto">
+    <path d="M ${CX-R} ${CY} A ${R} ${R} 0 0 1 ${CX+R} ${CY}" fill="none" stroke="var(--border2)" stroke-width="16" stroke-linecap="round"/>
+    <path d="M ${CX-R} ${CY} A ${R} ${R} 0 0 1 ${CX} ${CY-R}" fill="none" stroke="var(--green)" stroke-width="16" stroke-linecap="round" opacity=".25"/>
+    <path d="M ${CX} ${CY-R} A ${R} ${R} 0 0 1 ${(CX+R*Math.cos(Math.PI*1.75)).toFixed(1)} ${(CY+R*Math.sin(Math.PI*1.75)).toFixed(1)}" fill="none" stroke="var(--orange)" stroke-width="16" stroke-linecap="round" opacity=".25"/>
+    <path d="M ${(CX+R*Math.cos(Math.PI*1.75)).toFixed(1)} ${(CY+R*Math.sin(Math.PI*1.75)).toFixed(1)} A ${R} ${R} 0 0 1 ${CX+R} ${CY}" fill="none" stroke="var(--red)" stroke-width="16" stroke-linecap="round" opacity=".25"/>
+    ${pct>0?`<path d="M ${CX-R} ${CY} A ${R} ${R} 0 ${lg} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="${color}" stroke-width="16" stroke-linecap="round"/>`:''}
+    <text x="34"  y="${CY+26}" fill="var(--muted)" font-size="10" font-family="'IBM Plex Mono',monospace">0%</text>
+    <text x="138" y="20"       fill="var(--muted)" font-size="10" font-family="'IBM Plex Mono',monospace">50%</text>
+    <text x="248" y="${CY+26}" fill="var(--muted)" font-size="10" font-family="'IBM Plex Mono',monospace">100%</text>
+    <text x="${CX}" y="${CY+6}" text-anchor="middle" fill="${color}" font-size="32" font-weight="600" font-family="'IBM Plex Mono',monospace">${pct}%</text>
+  </svg>`;
 
-  // Show result panel and scroll
-  const rp = document.getElementById('result-panel');
-  rp.classList.add('show');
-  rp.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const nanNote=d.nan_filled>0?`<div style="font-size:11px;color:var(--orange);font-family:'IBM Plex Mono',monospace;margin-top:4px;">${d.nan_filled} value(s) replaced with defaults</div>`:'';
+
+  const shapHTML=d.shap_plot_url?`<div class="shcard"><div class="slabel">SHAP Feature Contributions</div><img class="shimg" src="${d.shap_plot_url}?t=${Date.now()}" alt="SHAP"/><p class="shnote">Red = increases risk · Blue = decreases risk · Length = magnitude</p></div>`:'';
+
+  const html=`
+  <div class="rcard" style="--rc:${color}">
+    <div class="rtop">
+      <div><div class="rslabel">Risk Score</div><div class="rsval">${(d.risk_pct||0).toFixed(1)}%</div>${nanNote}</div>
+      <span class="sbadge">${d.stage}</span>
+    </div>
+    <div class="slabel">Class Probabilities</div>
+    <div class="pbars">
+      <div class="prow"><span class="plbl">Normal</span><div class="ptrack"><div class="pfill" id="pb0" style="width:0%;background:var(--green)"></div></div><span class="ppct">${pn}%</span></div>
+      <div class="prow"><span class="plbl">Early Sepsis</span><div class="ptrack"><div class="pfill" id="pb1" style="width:0%;background:var(--orange)"></div></div><span class="ppct">${pe}%</span></div>
+      <div class="prow"><span class="plbl">Severe Sepsis</span><div class="ptrack"><div class="pfill" id="pb2" style="width:0%;background:var(--red)"></div></div><span class="ppct">${ps}%</span></div>
+    </div>
+    <div class="slabel">Clinical Explanation</div>
+    <div class="rexpl">${d.explanation||'No explanation available.'}</div>
+    <div class="slabel">Vital Status</div>
+    <div class="vsgrid">${vcHTML}</div>
+  </div>
+  <div class="gcard"><div class="slabel" style="text-align:center">Risk Level Gauge</div>${gaugeHTML}</div>
+  ${shapHTML}`;
+
+  const rp=document.getElementById('rp');
+  rp.innerHTML=html;rp.classList.add('on');
+  setTimeout(()=>{
+    const b0=document.getElementById('pb0');
+    const b1=document.getElementById('pb1');
+    const b2=document.getElementById('pb2');
+    if(b0)b0.style.width=pn+'%';
+    if(b1)b1.style.width=pe+'%';
+    if(b2)b2.style.width=ps+'%';
+  },60);
+  rp.scrollIntoView({behavior:'smooth',block:'start'});
 }
 </script>
-
 </body>
 </html>

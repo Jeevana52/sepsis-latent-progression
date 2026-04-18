@@ -1,184 +1,267 @@
- <!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SepsisProg - Prediction Result</title>
+<title>SepsisProg — Prediction Result</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
-:root {
-  --bg:#080d14;--bg2:#0d1520;--bg3:#111d2c;--surface:#141f30;
-  --border:#1e2f45;--accent:#2563eb;--accent2:#3b82f6;
-  --red:#ef4444;--orange:#f97316;--green:#22c55e;
-  --text:#e2e8f0;--muted:#64748b;
-  --mono:'DM Mono',monospace;--sans:'Outfit',sans-serif;
+:root{--t:background .3s,color .3s,border-color .3s,box-shadow .3s}
+[data-theme="dark"]{
+  --bg:#060b12;--bg2:#0b1220;--surface:#0f1929;--card:#111e2e;--card2:#152033;
+  --border:#1b2d42;--border2:#243650;
+  --text:#dde6f0;--text2:#92a8c0;--muted:#4f6680;
+  --accent:#1e6fde;--accent-lt:#4a90f5;--accent-glow:rgba(30,111,222,.20);
+  --red:#e85454;--red-lt:rgba(232,84,84,.12);
+  --orange:#f0802a;--orange-lt:rgba(240,128,42,.12);
+  --green:#27c47a;--green-lt:rgba(39,196,122,.12);
+  --shadow:0 4px 24px rgba(0,0,0,.45);
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(37,99,235,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+[data-theme="light"]{
+  --bg:#f3f7fc;--bg2:#eaf0f8;--surface:#ffffff;--card:#ffffff;--card2:#f6f9fd;
+  --border:#d8e4ef;--border2:#bfcfdf;
+  --text:#1a2535;--text2:#415570;--muted:#7b96b2;
+  --accent:#1557c8;--accent-lt:#1557c8;--accent-glow:rgba(21,87,200,.12);
+  --red:#c93b3b;--red-lt:rgba(201,59,59,.09);
+  --orange:#b85f0d;--orange-lt:rgba(184,95,13,.09);
+  --green:#168a50;--green-lt:rgba(22,138,80,.09);
+  --shadow:0 2px 14px rgba(0,30,80,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:var(--t)}
+[data-theme="dark"] body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(30,111,222,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(30,111,222,.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
 
-.header{position:relative;z-index:10;padding:20px 40px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)}
-.logo-mark{width:36px;height:36px;background:linear-gradient(135deg,#1d4ed8,#2563eb);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;font-weight:500;color:#fff;letter-spacing:-1px;box-shadow:0 0 20px rgba(37,99,235,.3)}
-.header-text h1{font-size:16px;font-weight:600;letter-spacing:-.3px}
-.header-text p{font-size:12px;color:var(--muted);margin-top:1px}
+/* Header */
+.hdr{position:relative;z-index:10;display:flex;align-items:center;gap:13px;padding:14px 36px;border-bottom:1px solid var(--border);background:var(--surface);box-shadow:var(--shadow);transition:var(--t)}
+.logo-mark{width:36px;height:36px;background:linear-gradient(140deg,#1558c8,#1e6fde);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#fff;letter-spacing:-.5px;box-shadow:0 0 0 1px rgba(255,255,255,.07),0 3px 14px var(--accent-glow);flex-shrink:0}
+.logo-title{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.2px}
+.logo-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:9px}
+.theme-btn{width:34px;height:34px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent)}
+.theme-btn .i-sun{display:none}.theme-btn .i-moon{display:block}
+[data-theme="light"] .theme-btn .i-sun{display:block}[data-theme="light"] .theme-btn .i-moon{display:none}
+.back-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text2);text-decoration:none;font-size:12px;font-weight:500;transition:border-color .2s,color .2s}
+.back-btn:hover{border-color:var(--accent);color:var(--accent)}
 
-.page{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:40px 24px 80px}
+/* Page */
+.page{position:relative;z-index:1;max-width:840px;margin:0 auto;padding:36px 20px 80px}
 
-.back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:28px;transition:color .15s}
-.back-link:hover{color:var(--text)}
+/* Meta row */
+.meta{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:22px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)}
+.meta-item{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)}
+.meta-item strong{color:var(--text);font-weight:500}
+.meta-warn{font-size:11px;color:var(--orange);font-family:'IBM Plex Mono',monospace}
 
-.section-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px;margin-top:24px}
+/* Card base */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:26px;margin-bottom:14px;box-shadow:var(--shadow);transition:var(--t);position:relative;overflow:hidden}
+.card.accented::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--rc,var(--accent))}
+.slabel{font-size:10px;font-family:'IBM Plex Mono',monospace;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:11px}
 
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:20px}
+/* Risk top */
+.rtop{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+.rslabel{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.rsval{font-family:'IBM Plex Mono',monospace;font-size:52px;font-weight:600;line-height:1;letter-spacing:-2px;color:var(--rc,var(--accent))}
+.sbadge{padding:7px 17px;border-radius:7px;font-size:13px;font-weight:600;letter-spacing:.2px;border:1.5px solid var(--rc,var(--accent));color:var(--rc,var(--accent));background:color-mix(in srgb,var(--rc,var(--accent)) 10%,transparent);align-self:flex-start}
 
-.risk-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:16px}
-.risk-label{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px}
-.risk-number{font-family:var(--mono);font-size:56px;font-weight:500;line-height:1;letter-spacing:-2px}
-.risk-number.low{color:var(--green)}.risk-number.medium{color:var(--orange)}.risk-number.high{color:var(--red)}
+/* Prob bars */
+.pbars{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.prow{display:flex;align-items:center;gap:11px}
+.plbl{font-size:12px;width:120px;color:var(--text2);flex-shrink:0}
+.ptrack{flex:1;height:8px;background:var(--bg2);border-radius:4px;overflow:hidden}
+.pfill{height:100%;border-radius:4px}
+.ppct{font-family:'IBM Plex Mono',monospace;font-size:11px;width:36px;text-align:right;color:var(--text2)}
 
-.stage-badge{padding:8px 18px;border-radius:6px;font-size:15px;font-weight:500}
-.stage-badge.normal{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25)}
-.stage-badge.early{background:rgba(249,115,22,.12);color:var(--orange);border:1px solid rgba(249,115,22,.25)}
-.stage-badge.severe{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+/* Explanation */
+.expl{border-left:3px solid var(--accent);padding:11px 14px;background:var(--accent-glow);border-radius:0 8px 8px 0;font-size:13px;line-height:1.7;color:var(--text);margin-bottom:20px}
 
-.prob-bars{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
-.prob-row{display:flex;align-items:center;gap:12px}
-.prob-name{font-size:13px;width:140px;color:var(--muted)}
-.prob-bar-wrap{flex:1;height:10px;background:var(--bg3);border-radius:5px;overflow:hidden}
-.prob-bar{height:100%;border-radius:5px}
-.prob-val{font-family:var(--mono);font-size:12px;width:48px;text-align:right}
-.bar-green{background:var(--green)}.bar-orange{background:var(--orange)}.bar-red{background:var(--red)}
+/* Vital grid */
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:9px}
+.vcell{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:12px;transition:border-color .2s}
+.vcell.is-h{border-color:rgba(232,84,84,.38);background:var(--red-lt)}
+.vcell.is-l{border-color:rgba(240,128,42,.38);background:var(--orange-lt)}
+.vcell.is-n{border-color:rgba(39,196,122,.28);background:var(--green-lt)}
+.vcname{font-size:10px;color:var(--muted);margin-bottom:4px}
+.vcval{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:500}
+.vcrange{font-size:9px;color:var(--muted);margin-top:2px;font-family:'IBM Plex Mono',monospace}
+.vcflag{font-size:10px;margin-top:3px;font-weight:600}
+.is-h .vcval{color:var(--red)}.is-h .vcflag{color:var(--red)}
+.is-l .vcval{color:var(--orange)}.is-l .vcflag{color:var(--orange)}
+.is-n .vcval{color:var(--green)}.is-n .vcflag{color:var(--green)}
 
-.expl-box{background:var(--bg3);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 16px;font-size:14px;line-height:1.65;color:var(--text);margin-bottom:20px}
+/* Gauge */
+.gauge-wrap{text-align:center;padding-top:4px}
 
-.feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-.feat-cell{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px}
-.feat-cell.high{border-color:rgba(239,68,68,.4)}.feat-cell.low{border-color:rgba(249,115,22,.4)}.feat-cell.normal{border-color:rgba(34,197,94,.2)}
-.feat-cell-name{font-size:11px;color:var(--muted);margin-bottom:4px}
-.feat-cell-val{font-family:var(--mono);font-size:20px;font-weight:500}
-.feat-cell-range{font-size:10px;color:var(--muted);margin-top:3px;font-family:var(--mono)}
-.feat-cell-flag{font-size:10px;margin-top:3px;font-weight:500}
-.feat-cell.high .feat-cell-flag{color:var(--red)}.feat-cell.low .feat-cell-flag{color:var(--orange)}.feat-cell.normal .feat-cell-flag{color:var(--green)}
+/* SHAP */
+.shap-img{width:100%;border-radius:7px;border:1px solid var(--border);margin-top:9px}
+.shap-note{font-size:11px;color:var(--muted);margin-top:7px}
 
-.shap-img{width:100%;border-radius:8px;margin-top:8px;border:1px solid var(--border)}
+/* Print / actions */
+.actions{display:flex;gap:11px;flex-wrap:wrap;margin-top:6px}
+.act-btn{flex:1;min-width:130px;padding:12px 18px;border-radius:9px;font-family:'Sora',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;text-decoration:none}
+.act-back{background:var(--card);border:1px solid var(--border);color:var(--text2)}
+.act-back:hover{border-color:var(--accent);color:var(--accent)}
+.act-print{background:linear-gradient(135deg,#1558c8,#1e6fde);border:none;color:#fff;box-shadow:0 3px 14px var(--accent-glow)}
+.act-print:hover{opacity:.9}
 
-.meta-row{display:flex;flex-wrap:wrap;gap:20px;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:20px}
-.meta-row span strong{color:var(--text);font-weight:500}
-
-.no-result{text-align:center;padding:80px 24px;color:var(--muted)}
-.no-result h3{font-size:18px;margin-bottom:8px;color:var(--text)}
+/* No result */
+.nodata{text-align:center;padding:80px 24px;color:var(--muted)}
+.nodata h3{font-size:18px;margin-bottom:8px;color:var(--text)}
 </style>
 </head>
 <body>
 
-<header class="header">
-  <div class="logo-mark">Sp</div>
-  <div class="header-text">
-    <h1>SepsisProg</h1>
-    <p>Prediction Result</p>
+<header class="hdr">
+  <div class="logo-mark">SP</div>
+  <div>
+    <div class="logo-title">SepsisProg</div>
+    <div class="logo-sub">Prediction Result</div>
+  </div>
+  <div class="hdr-right">
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+      <svg class="i-sun" xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path stroke-linecap="round" d="M12 2v2m0 16v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M2 12h2m16 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="i-moon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
+    </button>
+    <a href="/" class="back-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+      New Analysis
+    </a>
   </div>
 </header>
 
 <main class="page">
-  <a href="/" class="back-link">← Back to prediction</a>
 
-  {% if result %}
-  {% set s = result %}
-  {% set si = s.stage_idx %}
+{% if result %}
+{% set s = result %}
+{% set si = s.stage_idx %}
+{% set rc = '#e85454' if si==2 else '#f0802a' if si==1 else '#27c47a' %}
 
-  <!-- Meta row -->
-  <div class="meta-row">
-    <span>Patient ID: <strong>{{ s.subject_id }}</strong></span>
-    <span>Stage: <strong>{{ s.stage }}</strong></span>
-    <span>Risk: <strong>{{ s.risk_pct }}%</strong></span>
-    {% if s.nan_filled > 0 %}
-    <span style="color:#f97316">{{ s.nan_filled }} missing value(s) filled with defaults</span>
-    {% endif %}
+<!-- Meta row -->
+<div class="meta">
+  <span class="meta-item">Patient ID: <strong>{{ s.subject_id or 'N/A' }}</strong></span>
+  <span class="meta-item">Stage: <strong>{{ s.stage }}</strong></span>
+  <span class="meta-item">Risk Score: <strong>{{ s.risk_pct }}%</strong></span>
+  <span class="meta-item">Model: <strong>{{ 'Trained VAE+MLP' if s.used_model else 'Sepsis-3 Clinical' }}</strong></span>
+  {% if s.nan_filled > 0 %}<span class="meta-warn">⚠ {{ s.nan_filled }} value(s) filled with defaults</span>{% endif %}
+</div>
+
+<!-- Risk + Probabilities -->
+<div class="card accented" style="--rc:{{ rc }}">
+  <div class="rtop">
+    <div>
+      <div class="rslabel">Risk Score</div>
+      <div class="rsval">{{ s.risk_pct }}%</div>
+    </div>
+    <span class="sbadge">{{ s.stage }}</span>
   </div>
 
-  <!-- Risk + stage -->
-  <div class="card">
-    <div class="risk-top">
-      <div>
-        <div class="risk-label">Risk Score</div>
-        <div class="risk-number {{ 'low' if si==0 else 'medium' if si==1 else 'high' }}">
-          {{ s.risk_pct }}%
-        </div>
-      </div>
-      <span class="stage-badge {{ 'normal' if si==0 else 'early' if si==1 else 'severe' }}">
-        {{ s.stage }}
-      </span>
+  <div class="slabel">Class Probabilities</div>
+  <div class="pbars">
+    <div class="prow">
+      <span class="plbl">Normal</span>
+      <div class="ptrack"><div class="pfill" style="width:{{ (s.prob_normal*100)|round|int }}%;background:#27c47a"></div></div>
+      <span class="ppct">{{ (s.prob_normal*100)|round(1) }}%</span>
     </div>
-
-    <!-- Probability bars -->
-    <div class="section-title">Class probabilities</div>
-    <div class="prob-bars">
-      <div class="prob-row">
-        <span class="prob-name">Normal</span>
-        <div class="prob-bar-wrap">
-          <div class="prob-bar bar-green" style="width:{{ (s.prob_normal*100)|round|int }}%"></div>
-        </div>
-        <span class="prob-val">{{ (s.prob_normal*100)|round(1) }}%</span>
-      </div>
-      <div class="prob-row">
-        <span class="prob-name">Early Sepsis</span>
-        <div class="prob-bar-wrap">
-          <div class="prob-bar bar-orange" style="width:{{ (s.prob_early*100)|round|int }}%"></div>
-        </div>
-        <span class="prob-val">{{ (s.prob_early*100)|round(1) }}%</span>
-      </div>
-      <div class="prob-row">
-        <span class="prob-name">Severe Sepsis</span>
-        <div class="prob-bar-wrap">
-          <div class="prob-bar bar-red" style="width:{{ (s.prob_severe*100)|round|int }}%"></div>
-        </div>
-        <span class="prob-val">{{ (s.prob_severe*100)|round(1) }}%</span>
-      </div>
+    <div class="prow">
+      <span class="plbl">Early Sepsis</span>
+      <div class="ptrack"><div class="pfill" style="width:{{ (s.prob_early*100)|round|int }}%;background:#f0802a"></div></div>
+      <span class="ppct">{{ (s.prob_early*100)|round(1) }}%</span>
     </div>
-
-    <!-- Explanation -->
-    <div class="section-title">Clinical explanation</div>
-    <div class="expl-box">{{ s.explanation or 'No explanation available.' }}</div>
-
-    <!-- Vital status grid -->
-    <div class="section-title">Vital status</div>
-    <div class="feat-grid">
-      {% for f in s.feature_status %}
-      <div class="feat-cell {{ f.status if not f.missing else '' }}">
-        <div class="feat-cell-name">{{ f.display.split('(')[0].strip() }}</div>
-        <div class="feat-cell-val">{{ '—' if f.missing else f.value }}</div>
-        <div class="feat-cell-range">Normal: {{ f.range }}</div>
-        <div class="feat-cell-flag">
-          {% if f.missing %}— missing
-          {% elif f.status == 'normal' %}✓ normal
-          {% elif f.status == 'high' %}↑ high
-          {% else %}↓ low{% endif %}
-        </div>
-      </div>
-      {% endfor %}
+    <div class="prow">
+      <span class="plbl">Severe Sepsis</span>
+      <div class="ptrack"><div class="pfill" style="width:{{ (s.prob_severe*100)|round|int }}%;background:#e85454"></div></div>
+      <span class="ppct">{{ (s.prob_severe*100)|round(1) }}%</span>
     </div>
   </div>
 
-  <!-- SHAP plot -->
-  {% if s.shap_plot_url %}
-  <div class="card">
-    <div class="section-title">SHAP feature contributions</div>
-    <img class="shap-img" src="{{ s.shap_plot_url }}" alt="SHAP explanation"/>
-    <p style="font-size:12px;color:var(--muted);margin-top:10px">
-      Red bars increase risk · Blue bars decrease risk · Bar length = magnitude of contribution
-    </p>
-  </div>
-  {% endif %}
+  <div class="slabel">Clinical Explanation</div>
+  <div class="expl">{{ s.explanation or 'No explanation available.' }}</div>
 
-  {% else %}
-  <div class="no-result">
-    <h3>No result available</h3>
-    <p>Please run a prediction first.</p>
-    <a href="/" style="color:var(--accent2);font-size:14px;margin-top:16px;display:inline-block">← Go to prediction page</a>
+  <div class="slabel">Vital Status</div>
+  <div class="vgrid">
+    {% for f in s.feature_status %}
+    {% set sc = '' if f.missing else ('is-h' if f.status=='high' else ('is-l' if f.status=='low' else 'is-n')) %}
+    <div class="vcell {{ sc }}">
+      <div class="vcname">{{ f.display.split('(')[0].strip() }}</div>
+      <div class="vcval">{{ '—' if f.missing else f.value }}</div>
+      <div class="vcrange">Normal: {{ f.range }}</div>
+      <div class="vcflag">
+        {% if f.missing %}— not detected
+        {% elif f.status=='normal' %}✓ normal
+        {% elif f.status=='high' %}↑ high
+        {% else %}↓ low{% endif %}
+      </div>
+    </div>
+    {% endfor %}
   </div>
-  {% endif %}
+</div>
+
+<!-- Gauge card -->
+<div class="card">
+  <div class="slabel" style="text-align:center">Risk Level Gauge</div>
+  <div class="gauge-wrap">
+    {% set pct = (s.risk_score * 100)|round|int %}
+    {% set R = 100 %}{% set CX = 150 %}{% set CY = 128 %}
+    {% set ea_rad = (3.14159265 + (pct/100)*3.14159265) %}
+    {% set x2 = (CX + R * ea_rad|float|cos)|round(2) %}
+    {% set y2 = (CY + R * ea_rad|float|sin)|round(2) %}
+    {% set lg = 1 if pct > 50 else 0 %}
+    <svg viewBox="0 0 300 155" xmlns="http://www.w3.org/2000/svg" style="max-width:300px;display:block;margin:0 auto">
+      <path d="M {{ CX-R }} {{ CY }} A {{ R }} {{ R }} 0 0 1 {{ CX+R }} {{ CY }}" fill="none" stroke="var(--border2)" stroke-width="16" stroke-linecap="round"/>
+      <path d="M {{ CX-R }} {{ CY }} A {{ R }} {{ R }} 0 0 1 {{ CX }} {{ CY-R }}" fill="none" stroke="var(--green)" stroke-width="16" stroke-linecap="round" opacity=".25"/>
+      <path d="M {{ CX }} {{ CY-R }} A {{ R }} {{ R }} 0 0 1 {{ (CX + R*(-0.707))|round(1) }} {{ (CY + R*(-0.707))|round(1) }}" fill="none" stroke="var(--orange)" stroke-width="16" stroke-linecap="round" opacity=".25"/>
+      <path d="M {{ (CX + R*(-0.707))|round(1) }} {{ (CY + R*(-0.707))|round(1) }} A {{ R }} {{ R }} 0 0 1 {{ CX+R }} {{ CY }}" fill="none" stroke="var(--red)" stroke-width="16" stroke-linecap="round" opacity=".25"/>
+      {% if pct > 0 %}
+      <path d="M {{ CX-R }} {{ CY }} A {{ R }} {{ R }} 0 {{ lg }} 1 {{ x2 }} {{ y2 }}" fill="none" stroke="{{ rc }}" stroke-width="16" stroke-linecap="round"/>
+      {% endif %}
+      <text x="34"  y="{{ CY+26 }}" fill="var(--muted)" font-size="10" font-family="'IBM Plex Mono',monospace">0%</text>
+      <text x="138" y="20"          fill="var(--muted)" font-size="10" font-family="'IBM Plex Mono',monospace">50%</text>
+      <text x="248" y="{{ CY+26 }}" fill="var(--muted)" font-size="10" font-family="'IBM Plex Mono',monospace">100%</text>
+      <text x="{{ CX }}" y="{{ CY+6 }}" text-anchor="middle" fill="{{ rc }}" font-size="32" font-weight="600" font-family="'IBM Plex Mono',monospace">{{ pct }}%</text>
+    </svg>
+  </div>
+</div>
+
+<!-- SHAP -->
+{% if s.shap_plot_url %}
+<div class="card">
+  <div class="slabel">SHAP Feature Contributions</div>
+  <img class="shap-img" src="{{ s.shap_plot_url }}" alt="SHAP explanation"/>
+  <p class="shap-note">Red bars increase risk · Blue bars decrease risk · Bar length = contribution magnitude</p>
+</div>
+{% endif %}
+
+<!-- Actions -->
+<div class="actions">
+  <a href="/" class="act-btn act-back">
+    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+    New Analysis
+  </a>
+  <button class="act-btn act-print" onclick="window.print()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.056 48.056 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659"/></svg>
+    Print / Save PDF
+  </button>
+</div>
+
+{% else %}
+<div class="nodata">
+  <h3>No result available</h3>
+  <p>Please run a prediction from the main page.</p>
+  <a href="/" style="color:var(--accent-lt);font-size:13px;display:inline-block;margin-top:14px">← Go to prediction page</a>
+</div>
+{% endif %}
 
 </main>
+
+<script>
+function toggleTheme(){
+  const h=document.documentElement;
+  const t=h.getAttribute('data-theme')==='dark'?'light':'dark';
+  h.setAttribute('data-theme',t);
+  localStorage.setItem('spt',t);
+}
+(function(){const s=localStorage.getItem('spt');if(s)document.documentElement.setAttribute('data-theme',s)})();
+</script>
 </body>
 </html>
