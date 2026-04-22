@@ -374,6 +374,7 @@ function switchTab(m,btn){
 }
 
 // ── LIVE VALIDATE ──────────────────────────────────────────
+// Hint text is ALWAYS the clinical normal — never changes to validation range
 function lv(el,min,max,hid){
   const hint=document.getElementById(hid);
   // Auto-trim implausibly long inputs (accidental concatenation)
@@ -382,15 +383,19 @@ function lv(el,min,max,hid){
   }
   const val=parseFloat(el.value);
   if(el.value===''){
-    el.classList.remove('ok','err');hint.className='vhint';
-    hint.textContent=`Normal: ${min}–${max}`;return true;
+    // Empty — reset to normal state, keep the clinical normal text untouched
+    el.classList.remove('ok','err');
+    hint.classList.remove('ok','err');
+    return true;
   }
   if(isNaN(val)||val<min||val>max){
     el.classList.add('err');el.classList.remove('ok');
-    hint.className='vhint err';hint.textContent=`⚠ Enter ${min}–${max}`;return false;
+    hint.classList.add('err');hint.classList.remove('ok');
+    return false;
   }
   el.classList.add('ok');el.classList.remove('err');
-  hint.className='vhint ok';hint.textContent=`✓ ${val}`;return true;
+  hint.classList.add('ok');hint.classList.remove('err');
+  return true;
 }
 
 // ── FIELD DEFINITIONS ──────────────────────────────────────
